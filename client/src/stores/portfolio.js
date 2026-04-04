@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { apiFetch } from '../api.js'
 
 export const usePortfolioStore = defineStore('portfolio', () => {
   const portfolio = ref(null)
@@ -9,8 +10,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
   async function fetchPortfolio() {
     loading.value = true
     try {
-      const res = await fetch('/api/portfolio')
-      const data = await res.json()
+      const data = await apiFetch('/portfolio')
       portfolio.value = data.portfolio
     } finally {
       loading.value = false
@@ -18,32 +18,25 @@ export const usePortfolioStore = defineStore('portfolio', () => {
   }
 
   async function buyStock(symbol, quantity) {
-    const res = await fetch('/api/portfolio/buy', {
+    const data = await apiFetch('/portfolio/buy', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ symbol, quantity: Number(quantity) }),
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error)
     await fetchPortfolio()
     return data
   }
 
   async function sellStock(symbol, quantity) {
-    const res = await fetch('/api/portfolio/sell', {
+    const data = await apiFetch('/portfolio/sell', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ symbol, quantity: Number(quantity) }),
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error)
     await fetchPortfolio()
     return data
   }
 
   async function fetchTransactions() {
-    const res = await fetch('/api/transactions')
-    const data = await res.json()
+    const data = await apiFetch('/transactions')
     transactions.value = data.transactions
   }
 

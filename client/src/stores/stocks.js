@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { apiFetch } from '../api.js'
 
 export const useStocksStore = defineStore('stocks', () => {
   const stocks = ref([])
@@ -9,8 +10,7 @@ export const useStocksStore = defineStore('stocks', () => {
   async function fetchStocks() {
     loading.value = true
     try {
-      const res = await fetch('/api/stocks')
-      const data = await res.json()
+      const data = await apiFetch('/stocks')
       stocks.value = data.stocks
     } finally {
       loading.value = false
@@ -20,8 +20,7 @@ export const useStocksStore = defineStore('stocks', () => {
   async function fetchStock(symbol) {
     loading.value = true
     try {
-      const res = await fetch(`/api/stocks/${symbol}`)
-      const data = await res.json()
+      const data = await apiFetch(`/stocks/${symbol}`)
       currentStock.value = data.stock
     } finally {
       loading.value = false
