@@ -70,14 +70,7 @@ function authRoutes(app) {
     const passwordHash = await hashPassword(password)
     const validationToken = randomBytes(32).toString('hex')
 
-    // Créer l'utilisateur dans la base de données (compte non validé)
-    const user = await User.create({
-      email: normalizedEmail,
-      username: `${username}-${validationToken.slice(0, 6)}`,
-      passwordHash,
-      validationToken,
-    })
-
+    // Essayer d'envoyer l'email AVANT de créer le compte
     try {
       await sendVerificationEmail(app, normalizedEmail, validationToken)
     } catch (error) {
@@ -86,14 +79,21 @@ function authRoutes(app) {
         email: normalizedEmail,
       }, 'Failed to send registration email')
 
-      return reply.status(503).send(withVerificationDebugData({
-        error: 'Compte créé, mais l\'email de validation n\'a pas pu être envoyé. Réessayez plus tard.',
-        email: user.email,
-      }, validationToken))
+      return reply.status(503).send({
+        error: 'Impossible d\'envoyer l\'email de validation. Veuillez réessayer plus tard.',
+      })
     }
 
+    // Email envoyé avec succès — créer le compte
+    const user = await User.create({
+      email: normalizedEmail,
+      username: `${username}-${validationToken.slice(0, 6)}`,
+      passwordHash,
+      validationToken,
+    })
+
     return reply.status(201).send(withVerificationDebugData({
-      message: 'Utilisateur créé avec succès. Veuillez vérifier votre email pour confirmer votre compte.',
+      message: 'Compte cree avec succes. Verifiez votre email pour confirmer votre compte.',
       email: user.email,
     }, validationToken))
   })
