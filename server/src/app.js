@@ -19,7 +19,16 @@ async function buildApp() {
   })
 
   await fastify.register(cors, {
-    origin: config.appBaseUrl,
+    origin: (origin, cb) => {
+      if (!origin
+        || origin === config.appBaseUrl
+        || origin.endsWith('.netlify.app')
+        || origin.startsWith('http://localhost')) {
+        cb(null, true)
+      } else {
+        cb(new Error('Not allowed by CORS'), false)
+      }
+    },
     credentials: true,
   })
   await fastify.register(authPlugin)
