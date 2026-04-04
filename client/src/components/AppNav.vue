@@ -22,19 +22,25 @@ async function handleLogout() {
       <router-link to="/" class="nav-link">
         <span class="nav-icon">&#9632;</span> Dashboard
       </router-link>
-      <router-link to="/portfolio" class="nav-link">
-        <span class="nav-icon">&#9670;</span> Portfolio
-      </router-link>
-      <router-link to="/transactions" class="nav-link">
-        <span class="nav-icon">&#9654;</span> Transactions
-      </router-link>
+      <template v-if="auth.isAuthenticated">
+        <router-link to="/portfolio" class="nav-link">
+          <span class="nav-icon">&#9670;</span> Portfolio
+        </router-link>
+        <router-link to="/transactions" class="nav-link">
+          <span class="nav-icon">&#9654;</span> Transactions
+        </router-link>
+      </template>
     </div>
 
-    <div class="nav-footer">
+    <div class="nav-footer" v-if="auth.isAuthenticated">
       <div class="user-info">
         <span class="user-name">{{ auth.user?.username }}</span>
       </div>
       <button class="logout-btn" @click="handleLogout">Deconnexion</button>
+    </div>
+    <div class="nav-footer" v-else>
+      <router-link to="/login" class="login-btn">Connexion</router-link>
+      <router-link to="/register" class="register-link">Creer un compte</router-link>
     </div>
   </nav>
 </template>
@@ -141,5 +147,38 @@ async function handleLogout() {
 .logout-btn:hover {
   border-color: var(--red);
   color: var(--red);
+}
+
+.login-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  transition: opacity 0.15s;
+  margin-bottom: 8px;
+}
+
+.login-btn:hover {
+  opacity: 0.9;
+}
+
+.register-link {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.register-link:hover {
+  color: var(--accent);
 }
 </style>

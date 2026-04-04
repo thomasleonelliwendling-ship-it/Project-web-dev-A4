@@ -1,11 +1,14 @@
 <script setup>
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth.js'
 import AppNav from './components/AppNav.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+const isAuthPage = computed(() => route.meta.guest === true)
 
 onMounted(async () => {
   await auth.fetchUser()
@@ -14,8 +17,8 @@ onMounted(async () => {
 
 <template>
   <div class="app">
-    <AppNav v-if="auth.isAuthenticated" />
-    <main class="main-content" :class="{ 'no-nav': !auth.isAuthenticated }">
+    <AppNav v-if="!isAuthPage" />
+    <main class="main-content" :class="{ 'no-nav': isAuthPage }">
       <router-view />
     </main>
   </div>

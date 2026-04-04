@@ -3,11 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStocksStore } from '../stores/stocks.js'
 import { usePortfolioStore } from '../stores/portfolio.js'
+import { useAuthStore } from '../stores/auth.js'
 import StockChart from '../components/StockChart.vue'
 
 const route = useRoute()
 const stocksStore = useStocksStore()
 const portfolioStore = usePortfolioStore()
+const auth = useAuthStore()
 
 const quantity = ref(1)
 const tradeType = ref('buy')
@@ -24,7 +26,9 @@ const totalCost = computed(() => {
 
 onMounted(async () => {
   await stocksStore.fetchStock(route.params.symbol)
-  await portfolioStore.fetchPortfolio()
+  if (auth.isAuthenticated) {
+    await portfolioStore.fetchPortfolio()
+  }
 })
 
 function formatPrice(price) {
@@ -76,7 +80,7 @@ async function handleTrade() {
         <StockChart :price-history="stock.priceHistory" />
       </div>
 
-      <div class="trade-section">
+      <div class="trade-section" v-if="auth.isAuthenticated">
         <h2>Passer un ordre</h2>
 
         <div class="trade-tabs">
@@ -134,6 +138,16 @@ async function handleTrade() {
             {{ stock.symbol }}
           </button>
         </div>
+      </div>
+
+      <div class="trade-section login-prompt" v-else>
+        <h2>Passer un ordre</h2>
+        <p class="prompt-text">Connectez-vous pour acheter et vendre des actions</p>
+        <router-link to="/login" class="prompt-btn">Connexion</router-link>
+        <p class="prompt-subtext">
+          Pas encore de compte ?
+          <router-link to="/register">Creer un compte</router-link>
+        </p>
       </div>
     </div>
 
@@ -374,5 +388,50 @@ async function handleTrade() {
   text-align: center;
   color: var(--text-secondary);
   padding: 60px;
+}
+
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.prompt-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.prompt-btn {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--accent);
+  color: #000;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+  margin-bottom: 16px;
+}
+
+.prompt-btn:hover {
+  opacity: 0.9;
+}
+
+.prompt-subtext {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.prompt-subtext a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.prompt-subtext a:hover {
+  text-decoration: underline;
 }
 </style>

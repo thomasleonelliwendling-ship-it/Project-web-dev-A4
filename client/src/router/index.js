@@ -13,8 +13,8 @@ const router = createRouter({
   routes: [
     { path: '/login', name: 'login', component: LoginPage, meta: { guest: true } },
     { path: '/register', name: 'register', component: RegisterPage, meta: { guest: true } },
-    { path: '/', name: 'dashboard', component: DashboardPage, meta: { auth: true } },
-    { path: '/stock/:symbol', name: 'stock', component: StockDetailPage, meta: { auth: true } },
+    { path: '/', name: 'dashboard', component: DashboardPage },
+    { path: '/stock/:symbol', name: 'stock', component: StockDetailPage },
     { path: '/portfolio', name: 'portfolio', component: PortfolioPage, meta: { auth: true } },
     { path: '/transactions', name: 'transactions', component: TransactionsPage, meta: { auth: true } },
   ],
