@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import cors from '@fastify/cors'
 
 import config from './config.js'
 import envToLogger from './logger.js'
@@ -17,6 +18,10 @@ async function buildApp() {
     logger: envToLogger[config.env] ?? true,
   })
 
+  await fastify.register(cors, {
+    origin: config.appBaseUrl,
+    credentials: true,
+  })
   await fastify.register(authPlugin)
   await fastify.register(mongoosePlugin)
 
