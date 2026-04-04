@@ -22,6 +22,11 @@ const transactionSchema = new Schema({
     enum: ['buy', 'sell'],
     required: true,
   },
+  mode: {
+    type: String,
+    enum: ['demo', 'live'],
+    default: 'demo',
+  },
   quantity: {
     type: Number,
     required: true,

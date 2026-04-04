@@ -1,10 +1,14 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { usePortfolioStore } from '../stores/portfolio.js'
 
 const portfolioStore = usePortfolioStore()
 
 onMounted(() => {
+  portfolioStore.fetchTransactions()
+})
+
+watch(() => portfolioStore.mode, () => {
   portfolioStore.fetchTransactions()
 })
 
@@ -26,7 +30,7 @@ function formatDate(date) {
 <template>
   <div class="transactions">
     <header class="page-header">
-      <h1>Transactions</h1>
+      <h1>Transactions <span class="mode-badge" :class="portfolioStore.mode">{{ portfolioStore.mode === 'demo' ? 'Demo' : 'Live' }}</span></h1>
       <p class="subtitle">Historique de vos ordres</p>
     </header>
 
@@ -82,6 +86,24 @@ function formatDate(date) {
   color: var(--text-secondary);
   font-size: 14px;
   margin-top: 4px;
+}
+
+.mode-badge {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.mode-badge.demo {
+  background: rgba(247, 147, 26, 0.15);
+  color: var(--accent);
+}
+
+.mode-badge.live {
+  background: rgba(38, 166, 154, 0.15);
+  color: var(--green);
 }
 
 .transactions-section {

@@ -1,12 +1,37 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { usePortfolioStore } from '../stores/portfolio.js'
 
 const portfolioStore = usePortfolioStore()
+const depositAmount = ref('')
+const depositMsg = ref('')
+const resetMsg = ref('')
+const showDeposit = ref(false)
 
 onMounted(() => {
   portfolioStore.fetchPortfolio()
 })
+
+watch(() => portfolioStore.mode, () => {
+  portfolioStore.fetchPortfolio()
+})
+
+async function handleResetDemo() {
+  if (!confirm('Reinitialiser le portfolio demo ? Toutes les positions et transactions seront supprimees.')) return
+  const data = await portfolioStore.resetDemo()
+  resetMsg.value = data.message
+  setTimeout(() => resetMsg.value = '', 3000)
+}
+
+async function handleDeposit() {
+  const amount = Number(depositAmount.value)
+  if (!amount || amount < 1) return
+  const data = await portfolioStore.deposit(amount)
+  depositMsg.value = data.message
+  depositAmount.value = ''
+  showDeposit.value = false
+  setTimeout(() => depositMsg.value = '', 3000)
+}
 
 function formatPrice(price) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
@@ -20,8 +45,23 @@ function formatChange(val) {
 <template>
   <div class="portfolio">
     <header class="page-header">
-      <h1>Portfolio</h1>
-      <p class="subtitle">Vue d'ensemble de vos positions</p>
+      <div class="header-row">
+        <div>
+          <h1>Portfolio <span class="mode-badge" :class="portfolioStore.mode">{{ portfolioStore.mode === 'demo' ? 'Demo Trade' : 'Live Trade' }}</span></h1>
+          <p class="subtitle">{{ portfolioStore.mode === 'demo' ? 'Tradez avec $100,000 virtuels' : 'Trading avec de l\'argent reel' }}</p>
+        </div>
+        <div class="header-actions">
+          <button v-if="portfolioStore.mode === 'demo'" class="action-btn reset" @click="handleResetDemo">Reinitialiser</button>
+          <button v-if="portfolioStore.mode === 'live'" class="action-btn deposit" @click="showDeposit = !showDeposit">Deposer</button>
+        </div>
+      </div>
+      <p v-if="resetMsg" class="action-msg">{{ resetMsg }}</p>
+      <p v-if="depositMsg" class="action-msg">{{ depositMsg }}</p>
+
+      <div v-if="showDeposit" class="deposit-form">
+        <input v-model="depositAmount" type="number" min="1" placeholder="Montant en $" class="deposit-input" />
+        <button class="action-btn deposit" @click="handleDeposit">Confirmer le depot</button>
+      </div>
     </header>
 
     <div v-if="portfolioStore.loading" class="loading">Chargement...</div>
@@ -98,6 +138,89 @@ function formatChange(val) {
   color: var(--text-secondary);
   font-size: 14px;
   margin-top: 4px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.mode-badge {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.mode-badge.demo {
+  background: rgba(247, 147, 26, 0.15);
+  color: var(--accent);
+}
+
+.mode-badge.live {
+  background: rgba(38, 166, 154, 0.15);
+  color: var(--green);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.action-btn.reset:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.action-btn.deposit {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.action-btn.deposit:hover {
+  opacity: 0.9;
+}
+
+.action-msg {
+  color: var(--green);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.deposit-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.deposit-input {
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  width: 160px;
+  outline: none;
+}
+
+.deposit-input:focus {
+  border-color: var(--accent);
 }
 
 .loading {

@@ -2,6 +2,20 @@ import Portfolio from './portfolio-schema.js'
 import Stock from './stock-schema.js'
 import Transaction from './transaction-schema.js'
 
+function getMode(request) {
+  return request.query.mode === 'live' ? 'live' : 'demo'
+}
+
+async function getOrCreatePortfolio(userId, mode) {
+  let portfolio = await Portfolio.findOne({ user: userId, mode }).lean()
+  if (!portfolio) {
+    const balance = mode === 'demo' ? 100000 : 0
+    portfolio = await Portfolio.create({ user: userId, mode, balance, holdings: [] })
+    portfolio = portfolio.toObject()
+  }
+  return portfolio
+}
+
 /**
  * @param {import('fastify').FastifyInstance} app
  */
@@ -11,13 +25,9 @@ function portfolioRoutes(app) {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = request.user.sub
+    const mode = getMode(request)
 
-    let portfolio = await Portfolio.findOne({ user: userId }).lean()
-
-    if (!portfolio) {
-      portfolio = await Portfolio.create({ user: userId, balance: 100000, holdings: [] })
-      portfolio = portfolio.toObject()
-    }
+    const portfolio = await getOrCreatePortfolio(userId, mode)
 
     // Enrichir les holdings avec les prix actuels
     const symbols = portfolio.holdings.map((h) => h.symbol)
@@ -41,6 +51,7 @@ function portfolioRoutes(app) {
     return reply.send({
       portfolio: {
         ...portfolio,
+        mode,
         holdings,
         totalMarketValue,
         totalValue: portfolio.balance + totalMarketValue,
@@ -53,7 +64,8 @@ function portfolioRoutes(app) {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = request.user.sub
-    const { symbol, quantity } = request.body
+    const { symbol, quantity, mode: bodyMode } = request.body
+    const mode = bodyMode === 'live' ? 'live' : 'demo'
 
     if (!symbol || !quantity || quantity < 1) {
       return reply.status(400).send({ error: 'Symbole et quantité (>= 1) requis' })
@@ -66,9 +78,10 @@ function portfolioRoutes(app) {
 
     const total = stock.currentPrice * quantity
 
-    let portfolio = await Portfolio.findOne({ user: userId })
+    let portfolio = await Portfolio.findOne({ user: userId, mode })
     if (!portfolio) {
-      portfolio = await Portfolio.create({ user: userId, balance: 100000, holdings: [] })
+      const balance = mode === 'demo' ? 100000 : 0
+      portfolio = await Portfolio.create({ user: userId, mode, balance, holdings: [] })
     }
 
     if (portfolio.balance < total) {
@@ -101,6 +114,7 @@ function portfolioRoutes(app) {
       stock: stock._id,
       symbol: stock.symbol,
       type: 'buy',
+      mode,
       quantity,
       price: stock.currentPrice,
       total,
@@ -118,7 +132,8 @@ function portfolioRoutes(app) {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = request.user.sub
-    const { symbol, quantity } = request.body
+    const { symbol, quantity, mode: bodyMode } = request.body
+    const mode = bodyMode === 'live' ? 'live' : 'demo'
 
     if (!symbol || !quantity || quantity < 1) {
       return reply.status(400).send({ error: 'Symbole et quantité (>= 1) requis' })
@@ -129,7 +144,7 @@ function portfolioRoutes(app) {
       return reply.status(404).send({ error: 'Action introuvable' })
     }
 
-    const portfolio = await Portfolio.findOne({ user: userId })
+    const portfolio = await Portfolio.findOne({ user: userId, mode })
     if (!portfolio) {
       return reply.status(400).send({ error: 'Aucun portfolio trouvé' })
     }
@@ -156,6 +171,7 @@ function portfolioRoutes(app) {
       stock: stock._id,
       symbol: stock.symbol,
       type: 'sell',
+      mode,
       quantity,
       price: stock.currentPrice,
       total,
@@ -166,6 +182,38 @@ function portfolioRoutes(app) {
       balance: portfolio.balance,
       total,
     })
+  })
+  // Reinitialiser le portfolio demo
+  app.post('/reset-demo', {
+    onRequest: [app.authenticate],
+  }, async (request, reply) => {
+    const userId = request.user.sub
+    await Portfolio.findOneAndDelete({ user: userId, mode: 'demo' })
+    await Transaction.deleteMany({ user: userId, mode: 'demo' })
+    const portfolio = await Portfolio.create({ user: userId, mode: 'demo', balance: 100000, holdings: [] })
+    return reply.send({ message: 'Portfolio demo reinitialise', balance: portfolio.balance })
+  })
+
+  // Deposer de l'argent (live) - simulation
+  app.post('/deposit', {
+    onRequest: [app.authenticate],
+  }, async (request, reply) => {
+    const userId = request.user.sub
+    const { amount } = request.body
+
+    if (!amount || amount < 1) {
+      return reply.status(400).send({ error: 'Montant invalide (minimum 1$)' })
+    }
+
+    let portfolio = await Portfolio.findOne({ user: userId, mode: 'live' })
+    if (!portfolio) {
+      portfolio = await Portfolio.create({ user: userId, mode: 'live', balance: 0, holdings: [] })
+    }
+
+    portfolio.balance += amount
+    await portfolio.save()
+
+    return reply.send({ message: `Depot de $${amount} effectue`, balance: portfolio.balance })
   })
 }
 

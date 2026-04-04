@@ -3,12 +3,12 @@ import nodemailer from 'nodemailer'
 import config from '../config.js'
 
 function buildTransport() {
-  const { host, port, secure, user, pass } = config.mail
+  const { host, port, user, pass } = config.mail
   if (host && user && pass) {
     return nodemailer.createTransport({
       host,
       port,
-      secure,
+      secure: port === 465,
       auth: {
         user,
         pass,

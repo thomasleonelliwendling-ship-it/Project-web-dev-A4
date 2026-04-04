@@ -28,7 +28,12 @@ const portfolioSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true,
+  },
+  mode: {
+    type: String,
+    enum: ['demo', 'live'],
+    default: 'demo',
+    required: true,
   },
   balance: {
     type: Number,
@@ -39,5 +44,7 @@ const portfolioSchema = new Schema({
 }, {
   timestamps: true,
 })
+
+portfolioSchema.index({ user: 1, mode: 1 }, { unique: true })
 
 export default mongoose.model('Portfolio', portfolioSchema)

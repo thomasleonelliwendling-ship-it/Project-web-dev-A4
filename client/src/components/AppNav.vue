@@ -1,9 +1,18 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { usePortfolioStore } from '../stores/portfolio.js'
 
 const auth = useAuthStore()
+const portfolioStore = usePortfolioStore()
 const router = useRouter()
+
+function switchMode(newMode) {
+  portfolioStore.setMode(newMode)
+  if (auth.isAuthenticated) {
+    portfolioStore.fetchPortfolio()
+  }
+}
 
 async function handleLogout() {
   await auth.logout()
@@ -16,6 +25,23 @@ async function handleLogout() {
     <div class="logo">
       <span class="logo-icon">B</span>
       <span class="logo-text">TradeView</span>
+    </div>
+
+    <div v-if="auth.isAuthenticated" class="mode-toggle">
+      <button
+        class="mode-btn"
+        :class="{ active: portfolioStore.mode === 'demo' }"
+        @click="switchMode('demo')"
+      >
+        Demo
+      </button>
+      <button
+        class="mode-btn live"
+        :class="{ active: portfolioStore.mode === 'live' }"
+        @click="switchMode('live')"
+      >
+        Live
+      </button>
     </div>
 
     <div class="nav-links">
@@ -85,6 +111,37 @@ async function handleLogout() {
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.mode-toggle {
+  display: flex;
+  margin: 16px 14px 0;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 7px 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+
+.mode-btn.live.active {
+  background: var(--green);
+  color: #fff;
 }
 
 .nav-links {

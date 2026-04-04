@@ -1,16 +1,16 @@
 import Stock from './stock-schema.js'
 
 const STOCKS_DATA = [
-  { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technologie', basePrice: 178, logo: 'https://logo.clearbit.com/apple.com' },
-  { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Technologie', basePrice: 415, logo: 'https://logo.clearbit.com/microsoft.com' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technologie', basePrice: 141, logo: 'https://logo.clearbit.com/google.com' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', sector: 'E-commerce', basePrice: 185, logo: 'https://logo.clearbit.com/amazon.com' },
-  { symbol: 'TSLA', name: 'Tesla Inc.', sector: 'Automobile', basePrice: 245, logo: 'https://logo.clearbit.com/tesla.com' },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.', sector: 'Semi-conducteurs', basePrice: 880, logo: 'https://logo.clearbit.com/nvidia.com' },
-  { symbol: 'META', name: 'Meta Platforms Inc.', sector: 'Technologie', basePrice: 505, logo: 'https://logo.clearbit.com/meta.com' },
-  { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Finance', basePrice: 198, logo: 'https://logo.clearbit.com/jpmorganchase.com' },
-  { symbol: 'V', name: 'Visa Inc.', sector: 'Finance', basePrice: 280, logo: 'https://logo.clearbit.com/visa.com' },
-  { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Santé', basePrice: 156, logo: 'https://logo.clearbit.com/jnj.com' },
+  { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technologie', basePrice: 178, logo: 'https://assets.parqet.com/logos/symbol/AAPL?format=png' },
+  { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Technologie', basePrice: 415, logo: 'https://assets.parqet.com/logos/symbol/MSFT?format=png' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technologie', basePrice: 141, logo: 'https://assets.parqet.com/logos/symbol/GOOGL?format=png' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.', sector: 'E-commerce', basePrice: 185, logo: 'https://assets.parqet.com/logos/symbol/AMZN?format=png' },
+  { symbol: 'TSLA', name: 'Tesla Inc.', sector: 'Automobile', basePrice: 245, logo: 'https://assets.parqet.com/logos/symbol/TSLA?format=png' },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.', sector: 'Semi-conducteurs', basePrice: 880, logo: 'https://assets.parqet.com/logos/symbol/NVDA?format=png' },
+  { symbol: 'META', name: 'Meta Platforms Inc.', sector: 'Technologie', basePrice: 505, logo: 'https://assets.parqet.com/logos/symbol/META?format=png' },
+  { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Finance', basePrice: 198, logo: 'https://assets.parqet.com/logos/symbol/JPM?format=png' },
+  { symbol: 'V', name: 'Visa Inc.', sector: 'Finance', basePrice: 280, logo: 'https://assets.parqet.com/logos/symbol/V?format=png' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Santé', basePrice: 156, logo: 'https://assets.parqet.com/logos/symbol/JNJ?format=png' },
 ]
 
 function generatePriceHistory(basePrice, days = 365 * 5) {
