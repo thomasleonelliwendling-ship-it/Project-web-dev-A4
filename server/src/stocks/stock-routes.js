@@ -7,7 +7,7 @@ function stockRoutes(app) {
   // Liste de toutes les actions (sans l'historique complet pour la perf)
   app.get('', async (request, reply) => {
     const stocks = await Stock.find()
-      .select('symbol name sector currentPrice previousClose updatedAt')
+      .select('symbol name sector logo currentPrice previousClose updatedAt')
       .sort({ symbol: 1 })
       .lean()
 

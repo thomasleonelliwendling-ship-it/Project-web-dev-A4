@@ -21,6 +21,10 @@ const stockSchema = new Schema({
     type: String,
     required: true,
   },
+  logo: {
+    type: String,
+    default: '',
+  },
   sector: {
     type: String,
     required: true,

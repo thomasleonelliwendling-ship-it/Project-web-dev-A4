@@ -62,9 +62,18 @@ async function handleTrade() {
 <template>
   <div class="stock-detail" v-if="stock">
     <div class="detail-header">
-      <div>
-        <h1>{{ stock.symbol }} <span class="stock-name">{{ stock.name }}</span></h1>
-        <span class="stock-sector">{{ stock.sector }}</span>
+      <div class="detail-title">
+        <img
+          v-if="stock.logo"
+          :src="stock.logo"
+          :alt="stock.symbol"
+          class="detail-logo"
+          @error="$event.target.style.display = 'none'"
+        />
+        <div>
+          <h1>{{ stock.symbol }} <span class="stock-name">{{ stock.name }}</span></h1>
+          <span class="stock-sector">{{ stock.sector }}</span>
+        </div>
       </div>
       <div class="price-block">
         <span class="current-price">{{ formatPrice(stock.currentPrice) }}</span>
@@ -76,7 +85,7 @@ async function handleTrade() {
 
     <div class="detail-grid">
       <div class="chart-section">
-        <h2>Historique des prix (90 jours)</h2>
+        <h2>Historique des prix</h2>
         <StockChart :price-history="stock.priceHistory" />
       </div>
 
@@ -183,6 +192,21 @@ async function handleTrade() {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 28px;
+}
+
+.detail-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.detail-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
+  padding: 3px;
 }
 
 .detail-header h1 {

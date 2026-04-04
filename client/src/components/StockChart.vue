@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -18,18 +18,42 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
 })
 
+const PERIODS = [
+  { label: '1J', days: 1 },
+  { label: '1S', days: 7 },
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
+  { label: '1A', days: 365 },
+  { label: '5A', days: 365 * 5 },
+]
+
+const selectedPeriod = ref(90)
+
+const filteredHistory = computed(() => {
+  if (props.compact) return props.priceHistory
+  const history = props.priceHistory
+  if (history.length <= selectedPeriod.value) return history
+  return history.slice(history.length - selectedPeriod.value - 1)
+})
+
 const isPositive = computed(() => {
-  if (props.priceHistory.length < 2) return true
-  const first = props.priceHistory[0].close
-  const last = props.priceHistory[props.priceHistory.length - 1].close
-  return last >= first
+  const h = filteredHistory.value
+  if (h.length < 2) return true
+  return h[h.length - 1].close >= h[0].close
 })
 
 const chartData = computed(() => {
-  const labels = props.priceHistory.map((p) =>
-    new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+  const h = filteredHistory.value
+  const dateFormat = selectedPeriod.value <= 7
+    ? { day: '2-digit', month: 'short', hour: '2-digit' }
+    : selectedPeriod.value <= 90
+      ? { day: '2-digit', month: 'short' }
+      : { month: 'short', year: 'numeric' }
+
+  const labels = h.map((p) =>
+    new Date(p.date).toLocaleDateString('fr-FR', dateFormat),
   )
-  const data = props.priceHistory.map((p) => p.close)
+  const data = h.map((p) => p.close)
   const color = isPositive.value ? '#26a69a' : '#ef5350'
 
   return {
@@ -78,12 +102,53 @@ const chartOptions = computed(() => ({
 </script>
 
 <template>
-  <div class="chart-wrapper" :class="{ compact }">
-    <Line :data="chartData" :options="chartOptions" />
+  <div>
+    <div v-if="!compact" class="period-tabs">
+      <button
+        v-for="p in PERIODS"
+        :key="p.days"
+        class="period-btn"
+        :class="{ active: selectedPeriod === p.days }"
+        @click="selectedPeriod = p.days"
+      >
+        {{ p.label }}
+      </button>
+    </div>
+    <div class="chart-wrapper" :class="{ compact }">
+      <Line :data="chartData" :options="chartOptions" />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.period-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.period-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.period-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.period-btn.active {
+  background: rgba(247, 147, 26, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .chart-wrapper {
   width: 100%;
   height: 300px;

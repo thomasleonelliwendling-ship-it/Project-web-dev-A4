@@ -35,9 +35,18 @@ function formatChange(val) {
         class="stock-card"
       >
         <div class="stock-header">
-          <div>
-            <span class="stock-symbol">{{ stock.symbol }}</span>
-            <span class="stock-name">{{ stock.name }}</span>
+          <div class="stock-info">
+            <img
+              v-if="stock.logo"
+              :src="stock.logo"
+              :alt="stock.symbol"
+              class="stock-logo"
+              @error="$event.target.style.display = 'none'"
+            />
+            <div>
+              <span class="stock-symbol">{{ stock.symbol }}</span>
+              <span class="stock-name">{{ stock.name }}</span>
+            </div>
           </div>
           <span class="stock-sector">{{ stock.sector }}</span>
         </div>
@@ -104,6 +113,21 @@ function formatChange(val) {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 16px;
+}
+
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stock-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #fff;
+  padding: 2px;
 }
 
 .stock-symbol {
