@@ -5,6 +5,7 @@ import { useStocksStore } from '../stores/stocks.js'
 import { usePortfolioStore } from '../stores/portfolio.js'
 import { useAuthStore } from '../stores/auth.js'
 import StockChart from '../components/StockChart.vue'
+import TechnicalIndicators from '../components/TechnicalIndicators.vue'
 
 const route = useRoute()
 const stocksStore = useStocksStore()
@@ -16,6 +17,27 @@ const tradeType = ref('buy')
 const message = ref('')
 const error = ref('')
 const tradeLoading = ref(false)
+const showFundModal = ref(false)
+const fundAmount = ref('')
+const fundMsg = ref('')
+
+async function handleAddFunds() {
+  const amount = Number(fundAmount.value)
+  if (!amount || amount < 1) return
+  try {
+    if (portfolioStore.mode === 'demo') {
+      await portfolioStore.deposit(amount)
+    } else {
+      await portfolioStore.deposit(amount)
+    }
+    fundMsg.value = `$${amount.toLocaleString()} ajoutes`
+    fundAmount.value = ''
+    showFundModal.value = false
+    setTimeout(() => fundMsg.value = '', 3000)
+  } catch (e) {
+    fundMsg.value = e.message
+  }
+}
 
 const stock = computed(() => stocksStore.currentStock)
 
@@ -136,6 +158,29 @@ async function handleTrade() {
 
           <p v-if="error" class="error-msg">{{ error }}</p>
           <p v-if="message" class="success-msg">{{ message }}</p>
+          <p v-if="fundMsg" class="success-msg">{{ fundMsg }}</p>
+
+          <button v-if="!showFundModal" type="button" class="add-funds-btn" @click="showFundModal = true">
+            + Ajouter des fonds
+          </button>
+          <div v-if="showFundModal" class="fund-modal">
+            <div class="fund-header">
+              <span>{{ portfolioStore.mode === 'demo' ? 'Ajouter des fonds (fictifs)' : 'Deposer des fonds' }}</span>
+              <button class="fund-close" @click="showFundModal = false">&times;</button>
+            </div>
+            <div v-if="portfolioStore.mode === 'live'" class="card-icons">
+              <span class="card-badge visa">VISA</span>
+              <span class="card-badge mc">MC</span>
+              <span class="card-badge cb">CB</span>
+            </div>
+            <div class="fund-amounts">
+              <button v-for="a in [1000, 5000, 10000, 50000]" :key="a" class="amount-chip" @click="fundAmount = a">
+                ${{ a.toLocaleString() }}
+              </button>
+            </div>
+            <input v-model.number="fundAmount" type="number" min="1" placeholder="Montant personnalise" class="fund-input" />
+            <button class="fund-confirm" @click="handleAddFunds">Confirmer le depot</button>
+          </div>
 
           <button
             @click="handleTrade"
@@ -181,6 +226,7 @@ async function handleTrade() {
         </div>
       </div>
     </div>
+    <TechnicalIndicators :price-history="stock.priceHistory" />
   </div>
 
   <div v-else class="loading">Chargement...</div>
@@ -457,5 +503,122 @@ async function handleTrade() {
 
 .prompt-subtext a:hover {
   text-decoration: underline;
+}
+
+.add-funds-btn {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-funds-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fund-modal {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.fund-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.fund-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.card-icons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.card-badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.card-badge.visa { background: #1a1f71; color: #fff; }
+.card-badge.mc { background: #eb001b; color: #fff; }
+.card-badge.cb { background: var(--green); color: #fff; }
+
+.fund-amounts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.amount-chip {
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.amount-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fund-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 8px;
+}
+
+.fund-input:focus {
+  border-color: var(--accent);
+}
+
+.fund-confirm {
+  width: 100%;
+  padding: 8px;
+  background: var(--green);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fund-confirm:hover {
+  opacity: 0.9;
 }
 </style>

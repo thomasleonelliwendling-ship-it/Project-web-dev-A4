@@ -63,125 +63,130 @@ function portfolioRoutes(app) {
   app.post('/buy', {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
-    const userId = request.user.sub
-    const { symbol, quantity, mode: bodyMode } = request.body
-    const mode = bodyMode === 'live' ? 'live' : 'demo'
+    try {
+      const userId = request.user.sub
+      const { symbol, quantity, mode: bodyMode } = request.body
+      const mode = bodyMode === 'live' ? 'live' : 'demo'
 
-    if (!symbol || !quantity || quantity < 1) {
-      return reply.status(400).send({ error: 'Symbole et quantité (>= 1) requis' })
-    }
+      if (!symbol || !quantity || quantity < 1) {
+        return reply.status(400).send({ error: 'Symbole et quantite (>= 1) requis' })
+      }
 
-    const stock = await Stock.findOne({ symbol: symbol.toUpperCase() })
-    if (!stock) {
-      return reply.status(404).send({ error: 'Action introuvable' })
-    }
+      const stock = await Stock.findOne({ symbol: symbol.toUpperCase() })
+      if (!stock) {
+        return reply.status(404).send({ error: 'Action introuvable' })
+      }
 
-    const total = stock.currentPrice * quantity
+      const total = stock.currentPrice * quantity
 
-    let portfolio = await Portfolio.findOne({ user: userId, mode })
-    if (!portfolio) {
-      const balance = mode === 'demo' ? 100000 : 0
-      portfolio = await Portfolio.create({ user: userId, mode, balance, holdings: [] })
-    }
+      let portfolio = await Portfolio.findOne({ user: userId, mode })
+      if (!portfolio) {
+        const balance = mode === 'demo' ? 100000 : 0
+        portfolio = new Portfolio({ user: userId, mode, balance, holdings: [] })
+        await portfolio.save()
+      }
 
-    if (portfolio.balance < total) {
-      return reply.status(400).send({ error: 'Solde insuffisant', balance: portfolio.balance, required: total })
-    }
+      if (portfolio.balance < total) {
+        return reply.status(400).send({ error: `Solde insuffisant ($${portfolio.balance.toFixed(2)} disponible, $${total.toFixed(2)} requis)` })
+      }
 
-    // Mettre à jour le solde
-    portfolio.balance -= total
+      portfolio.balance -= total
 
-    // Mettre à jour ou ajouter le holding
-    const existingHolding = portfolio.holdings.find((h) => h.symbol === stock.symbol)
-    if (existingHolding) {
-      const totalCost = existingHolding.averageCost * existingHolding.quantity + total
-      existingHolding.quantity += quantity
-      existingHolding.averageCost = totalCost / existingHolding.quantity
-    } else {
-      portfolio.holdings.push({
+      const existingHolding = portfolio.holdings.find((h) => h.symbol === stock.symbol)
+      if (existingHolding) {
+        const totalCost = existingHolding.averageCost * existingHolding.quantity + total
+        existingHolding.quantity += quantity
+        existingHolding.averageCost = totalCost / existingHolding.quantity
+      } else {
+        portfolio.holdings.push({
+          stock: stock._id,
+          symbol: stock.symbol,
+          quantity,
+          averageCost: stock.currentPrice,
+        })
+      }
+
+      await portfolio.save()
+
+      await Transaction.create({
+        user: userId,
         stock: stock._id,
         symbol: stock.symbol,
+        type: 'buy',
+        mode,
         quantity,
-        averageCost: stock.currentPrice,
+        price: stock.currentPrice,
+        total,
       })
+
+      return reply.status(201).send({
+        message: `Achat de ${quantity} ${stock.symbol} effectue`,
+        balance: portfolio.balance,
+        total,
+      })
+    } catch (err) {
+      app.log.error({ err }, 'Buy error')
+      return reply.status(500).send({ error: `Erreur lors de l'achat: ${err.message}` })
     }
-
-    await portfolio.save()
-
-    // Enregistrer la transaction
-    await Transaction.create({
-      user: userId,
-      stock: stock._id,
-      symbol: stock.symbol,
-      type: 'buy',
-      mode,
-      quantity,
-      price: stock.currentPrice,
-      total,
-    })
-
-    return reply.status(201).send({
-      message: `Achat de ${quantity} ${stock.symbol} effectué`,
-      balance: portfolio.balance,
-      total,
-    })
   })
 
   // Vendre une action
   app.post('/sell', {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
-    const userId = request.user.sub
-    const { symbol, quantity, mode: bodyMode } = request.body
-    const mode = bodyMode === 'live' ? 'live' : 'demo'
+    try {
+      const userId = request.user.sub
+      const { symbol, quantity, mode: bodyMode } = request.body
+      const mode = bodyMode === 'live' ? 'live' : 'demo'
 
-    if (!symbol || !quantity || quantity < 1) {
-      return reply.status(400).send({ error: 'Symbole et quantité (>= 1) requis' })
+      if (!symbol || !quantity || quantity < 1) {
+        return reply.status(400).send({ error: 'Symbole et quantite (>= 1) requis' })
+      }
+
+      const stock = await Stock.findOne({ symbol: symbol.toUpperCase() })
+      if (!stock) {
+        return reply.status(404).send({ error: 'Action introuvable' })
+      }
+
+      const portfolio = await Portfolio.findOne({ user: userId, mode })
+      if (!portfolio) {
+        return reply.status(400).send({ error: 'Aucun portfolio trouve' })
+      }
+
+      const holding = portfolio.holdings.find((h) => h.symbol === stock.symbol)
+      if (!holding || holding.quantity < quantity) {
+        return reply.status(400).send({ error: 'Quantite insuffisante en portefeuille' })
+      }
+
+      const total = stock.currentPrice * quantity
+      holding.quantity -= quantity
+      if (holding.quantity === 0) {
+        portfolio.holdings = portfolio.holdings.filter((h) => h.symbol !== stock.symbol)
+      }
+
+      portfolio.balance += total
+      await portfolio.save()
+
+      await Transaction.create({
+        user: userId,
+        stock: stock._id,
+        symbol: stock.symbol,
+        type: 'sell',
+        mode,
+        quantity,
+        price: stock.currentPrice,
+        total,
+      })
+
+      return reply.status(201).send({
+        message: `Vente de ${quantity} ${stock.symbol} effectuee`,
+        balance: portfolio.balance,
+        total,
+      })
+    } catch (err) {
+      app.log.error({ err }, 'Sell error')
+      return reply.status(500).send({ error: `Erreur lors de la vente: ${err.message}` })
     }
-
-    const stock = await Stock.findOne({ symbol: symbol.toUpperCase() })
-    if (!stock) {
-      return reply.status(404).send({ error: 'Action introuvable' })
-    }
-
-    const portfolio = await Portfolio.findOne({ user: userId, mode })
-    if (!portfolio) {
-      return reply.status(400).send({ error: 'Aucun portfolio trouvé' })
-    }
-
-    const holding = portfolio.holdings.find((h) => h.symbol === stock.symbol)
-    if (!holding || holding.quantity < quantity) {
-      return reply.status(400).send({ error: 'Quantité insuffisante en portefeuille' })
-    }
-
-    const total = stock.currentPrice * quantity
-
-    // Mettre à jour le holding
-    holding.quantity -= quantity
-    if (holding.quantity === 0) {
-      portfolio.holdings = portfolio.holdings.filter((h) => h.symbol !== stock.symbol)
-    }
-
-    portfolio.balance += total
-    await portfolio.save()
-
-    // Enregistrer la transaction
-    await Transaction.create({
-      user: userId,
-      stock: stock._id,
-      symbol: stock.symbol,
-      type: 'sell',
-      mode,
-      quantity,
-      price: stock.currentPrice,
-      total,
-    })
-
-    return reply.status(201).send({
-      message: `Vente de ${quantity} ${stock.symbol} effectuée`,
-      balance: portfolio.balance,
-      total,
-    })
   })
   // Reinitialiser le portfolio demo
   app.post('/reset-demo', {
@@ -194,20 +199,22 @@ function portfolioRoutes(app) {
     return reply.send({ message: 'Portfolio demo reinitialise', balance: portfolio.balance })
   })
 
-  // Deposer de l'argent (live) - simulation
+  // Deposer de l'argent
   app.post('/deposit', {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
     const userId = request.user.sub
-    const { amount } = request.body
+    const { amount, mode: bodyMode } = request.body
+    const mode = bodyMode === 'live' ? 'live' : 'demo'
 
     if (!amount || amount < 1) {
       return reply.status(400).send({ error: 'Montant invalide (minimum 1$)' })
     }
 
-    let portfolio = await Portfolio.findOne({ user: userId, mode: 'live' })
+    let portfolio = await Portfolio.findOne({ user: userId, mode })
     if (!portfolio) {
-      portfolio = await Portfolio.create({ user: userId, mode: 'live', balance: 0, holdings: [] })
+      const initBalance = mode === 'demo' ? 100000 : 0
+      portfolio = new Portfolio({ user: userId, mode, balance: initBalance, holdings: [] })
     }
 
     portfolio.balance += amount

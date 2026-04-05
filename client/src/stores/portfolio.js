@@ -50,7 +50,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
   async function deposit(amount) {
     const data = await apiFetch('/portfolio/deposit', {
       method: 'POST',
-      body: JSON.stringify({ amount: Number(amount) }),
+      body: JSON.stringify({ amount: Number(amount), mode: mode.value }),
     })
     await fetchPortfolio()
     return data

@@ -35,6 +35,19 @@ async function buildApp() {
   await fastify.register(authPlugin)
   await fastify.register(mongoosePlugin)
 
+  // Migration: supprimer l'ancien index unique user_1 sur portfolios
+  try {
+    const db = (await import('mongoose')).default.connection.db
+    const indexes = await db.collection('portfolios').indexes()
+    const oldIndex = indexes.find(i => i.name === 'user_1' && i.unique)
+    if (oldIndex) {
+      await db.collection('portfolios').dropIndex('user_1')
+      fastify.log.info('Dropped legacy user_1 unique index on portfolios')
+    }
+  } catch {
+    // Collection may not exist yet
+  }
+
   // Seed des données boursières au démarrage
   await seedStocks()
 
