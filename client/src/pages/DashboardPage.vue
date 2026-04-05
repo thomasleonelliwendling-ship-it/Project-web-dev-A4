@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useStocksStore } from '../stores/stocks.js'
 import { usePortfolioStore } from '../stores/portfolio.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -30,6 +30,14 @@ function formatPrice(price) {
 function formatChange(val) {
   return val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2)
 }
+
+const activeFilter = ref('all')
+
+const filteredStocks = computed(() => {
+  const stocks = stocksStore.stocks || []
+  if (activeFilter.value === 'all') return stocks
+  return stocks.filter(s => s.type === activeFilter.value)
+})
 
 function formatPct(val) {
   return val >= 0 ? `+${val.toFixed(2)}%` : `${val.toFixed(2)}%`
@@ -95,10 +103,15 @@ function formatPct(val) {
       </div>
 
       <!-- All stocks -->
-      <h2 class="section-title">Toutes les actions</h2>
+      <div class="filter-bar">
+        <button class="filter-btn" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">Tous</button>
+        <button class="filter-btn" :class="{ active: activeFilter === 'stock' }" @click="activeFilter = 'stock'">Actions</button>
+        <button class="filter-btn" :class="{ active: activeFilter === 'crypto' }" @click="activeFilter = 'crypto'">Crypto</button>
+        <button class="filter-btn" :class="{ active: activeFilter === 'etf' }" @click="activeFilter = 'etf'">Indices / ETF</button>
+      </div>
       <div class="stocks-grid">
         <router-link
-          v-for="stock in stocksStore.stocks"
+          v-for="stock in filteredStocks"
           :key="stock.symbol"
           :to="`/stock/${stock.symbol}`"
           class="stock-card"
@@ -173,6 +186,11 @@ function formatPct(val) {
 .mover-pct { font-size: 13px; font-weight: 600; min-width: 70px; text-align: right; }
 
 .section-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
+
+.filter-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+.filter-btn { padding: 6px 16px; background: transparent; border: 1px solid var(--border); border-radius: 20px; color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
 
 .loading { text-align: center; color: var(--text-secondary); padding: 60px; }
 

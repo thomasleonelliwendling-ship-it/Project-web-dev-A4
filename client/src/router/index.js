@@ -8,6 +8,7 @@ import StockDetailPage from '../pages/StockDetailPage.vue'
 import PortfolioPage from '../pages/PortfolioPage.vue'
 import TransactionsPage from '../pages/TransactionsPage.vue'
 import WatchlistPage from '../pages/WatchlistPage.vue'
+import SettingsPage from '../pages/SettingsPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,7 @@ const router = createRouter({
     { path: '/portfolio', name: 'portfolio', component: PortfolioPage, meta: { auth: true } },
     { path: '/transactions', name: 'transactions', component: TransactionsPage, meta: { auth: true } },
     { path: '/watchlist', name: 'watchlist', component: WatchlistPage, meta: { auth: true } },
+    { path: '/settings', name: 'settings', component: SettingsPage, meta: { auth: true } },
   ],
 })
 

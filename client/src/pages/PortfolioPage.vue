@@ -63,7 +63,8 @@ async function handleQuickSell() {
 function sellAll(holding) {
   sellModal.value = holding
   sellQty.value = holding.quantity
-  handleQuickSell()
+  sellMsg.value = ''
+  sellError.value = ''
 }
 
 function formatPrice(price) {

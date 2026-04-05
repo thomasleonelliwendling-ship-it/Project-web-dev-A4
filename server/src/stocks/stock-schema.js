@@ -29,6 +29,11 @@ const stockSchema = new Schema({
     type: String,
     required: true,
   },
+  type: {
+    type: String,
+    enum: ['stock', 'crypto', 'etf'],
+    default: 'stock',
+  },
   currentPrice: {
     type: Number,
     required: true,

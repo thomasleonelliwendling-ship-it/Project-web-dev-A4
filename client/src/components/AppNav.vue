@@ -11,14 +11,38 @@ const showUserMenu = ref(false)
 const showFundPopup = ref(false)
 const fundAmount = ref('')
 const fundMsg = ref('')
+const cardName = ref('')
+const cardNumber = ref('')
+const cardExpiry = ref('')
+const cardCvv = ref('')
+const cardError = ref('')
+
+function isCardValid() {
+  if (!cardName.value.trim()) return false
+  if (cardNumber.value.replace(/\s/g, '').length < 16) return false
+  if (!/^\d{2}\/\d{2}$/.test(cardExpiry.value)) return false
+  if (cardCvv.value.length < 3) return false
+  return true
+}
 
 async function handleDeposit() {
   const amount = Number(fundAmount.value)
   if (!amount || amount < 1) return
+  cardError.value = ''
+
+  if (portfolioStore.mode === 'live' && !isCardValid()) {
+    cardError.value = 'Veuillez remplir correctement les informations de carte'
+    return
+  }
+
   try {
     await portfolioStore.deposit(amount)
     fundMsg.value = `+$${amount.toLocaleString()}`
     fundAmount.value = ''
+    cardName.value = ''
+    cardNumber.value = ''
+    cardExpiry.value = ''
+    cardCvv.value = ''
     showFundPopup.value = false
     setTimeout(() => fundMsg.value = '', 3000)
   } catch (e) {
@@ -83,12 +107,29 @@ async function handleLogout() {
       <span v-if="fundMsg" class="fund-msg">{{ fundMsg }}</span>
 
       <div v-if="showFundPopup" class="fund-popup">
-        <div class="fund-popup-title">{{ portfolioStore.mode === 'demo' ? 'Fonds fictifs' : 'Deposer' }}</div>
+        <div class="fund-popup-title">{{ portfolioStore.mode === 'demo' ? 'Ajouter des fonds fictifs' : 'Depot par carte' }}</div>
+
+        <template v-if="portfolioStore.mode === 'live'">
+          <div class="card-logos">
+            <span class="card-badge visa">VISA</span>
+            <span class="card-badge mc">MC</span>
+          </div>
+          <input v-model="cardName" type="text" placeholder="Nom sur la carte" class="fund-input" />
+          <input v-model="cardNumber" type="text" placeholder="1234 5678 9012 3456" maxlength="19" class="fund-input" />
+          <div class="card-row-inputs">
+            <input v-model="cardExpiry" type="text" placeholder="MM/AA" maxlength="5" class="fund-input half" />
+            <input v-model="cardCvv" type="text" placeholder="CVV" maxlength="4" class="fund-input half" />
+          </div>
+          <p v-if="cardError" class="card-error">{{ cardError }}</p>
+        </template>
+
         <div class="fund-chips">
           <button v-for="a in [100, 1000, 5000, 10000, 50000]" :key="a" class="fund-chip" @click="fundAmount = a">${{ a.toLocaleString() }}</button>
         </div>
-        <input v-model.number="fundAmount" type="number" min="1" placeholder="Montant" class="fund-input" @keyup.enter="handleDeposit" />
-        <button class="fund-go" @click="handleDeposit" :disabled="!fundAmount || fundAmount < 1">Confirmer</button>
+        <input v-model.number="fundAmount" type="number" min="1" placeholder="Montant en $" class="fund-input" @keyup.enter="handleDeposit" />
+        <button class="fund-go" @click="handleDeposit" :disabled="!fundAmount || fundAmount < 1">
+          {{ portfolioStore.mode === 'live' ? 'Payer et deposer' : 'Ajouter' }}
+        </button>
       </div>
     </div>
 
@@ -143,6 +184,10 @@ async function handleLogout() {
         <button class="menu-btn" @click="$router.push('/portfolio'); showUserMenu = false">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/></svg>
           Mon portefeuille
+        </button>
+        <button class="menu-btn" @click="$router.push('/settings'); showUserMenu = false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          Parametres
         </button>
         <button class="menu-btn logout" @click="handleLogout">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -357,6 +402,15 @@ async function handleLogout() {
 
 .fund-go:hover { opacity: 0.9; }
 .fund-go:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.card-logos { display: flex; gap: 6px; margin-bottom: 8px; }
+.card-badge { padding: 3px 8px; border-radius: 3px; font-size: 9px; font-weight: 800; letter-spacing: 0.5px; }
+.card-badge.visa { background: #1a1f71; color: #fff; }
+.card-badge.mc { background: #eb001b; color: #fff; }
+
+.card-row-inputs { display: flex; gap: 6px; }
+.fund-input.half { flex: 1; }
+.card-error { font-size: 11px; color: var(--red); margin: 4px 0; }
 
 .nav-links {
   flex: 1;
