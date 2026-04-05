@@ -84,34 +84,10 @@ function formatChange(val) {
           <p class="subtitle">{{ portfolioStore.mode === 'demo' ? 'Tradez avec $100,000 virtuels' : 'Trading avec de l\'argent reel' }}</p>
         </div>
         <div class="header-actions">
-          <button class="action-btn funds" @click="showDeposit = !showDeposit">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Ajouter des fonds
-          </button>
           <button v-if="portfolioStore.mode === 'demo'" class="action-btn reset" @click="handleResetDemo">Reinitialiser</button>
         </div>
       </div>
       <p v-if="resetMsg" class="action-msg">{{ resetMsg }}</p>
-      <p v-if="depositMsg" class="action-msg">{{ depositMsg }}</p>
-
-      <div v-if="showDeposit" class="deposit-panel">
-        <div class="deposit-header">
-          <span>{{ portfolioStore.mode === 'demo' ? 'Ajouter des fonds fictifs' : 'Deposer des fonds' }}</span>
-          <button class="close-btn" @click="showDeposit = false">&times;</button>
-        </div>
-        <div v-if="portfolioStore.mode === 'live'" class="card-row">
-          <span class="card-badge visa">VISA</span>
-          <span class="card-badge mc">MC</span>
-          <span class="card-badge cb">CB</span>
-        </div>
-        <div class="quick-amounts">
-          <button v-for="a in [1000, 5000, 10000, 50000, 100000]" :key="a" class="amt-btn" @click="depositAmount = a">${{ a.toLocaleString() }}</button>
-        </div>
-        <div class="deposit-row">
-          <input v-model.number="depositAmount" type="number" min="1" placeholder="Montant" class="deposit-input" />
-          <button class="confirm-btn" @click="handleDeposit">Deposer</button>
-        </div>
-      </div>
     </header>
 
     <div v-if="portfolioStore.loading" class="loading">Chargement...</div>

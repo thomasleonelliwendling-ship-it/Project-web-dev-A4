@@ -206,16 +206,29 @@ const chartData = computed(() => {
     : candlestickChartData.value
 })
 
-const chartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    tooltip: {
-      enabled: !props.compact,
-      mode: 'index',
-      intersect: false,
-      callbacks:
-        chartMode.value === 'candlestick' && !props.compact
+// Calcul des bornes Y pour un meilleur zoom sur les bougies
+const yBounds = computed(() => {
+  const h = filteredHistory.value
+  if (!h.length) return { min: 0, max: 100 }
+  const lows = h.map(p => p.low)
+  const highs = h.map(p => p.high)
+  const min = Math.min(...lows)
+  const max = Math.max(...highs)
+  const padding = (max - min) * 0.08
+  return { min: Math.floor((min - padding) * 100) / 100, max: Math.ceil((max + padding) * 100) / 100 }
+})
+
+const chartOptions = computed(() => {
+  const isCandle = chartMode.value === 'candlestick' && !props.compact
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      tooltip: {
+        enabled: !props.compact,
+        mode: 'index',
+        intersect: false,
+        callbacks: isCandle
           ? {
               label(ctx) {
                 const i = ctx.dataIndex
@@ -229,41 +242,34 @@ const chartOptions = computed(() => ({
                     `C: ${p.close.toFixed(2)}`,
                   ]
                 }
-                if (
-                  ctx.dataset.label === 'SMA 20' ||
-                  ctx.dataset.label === 'SMA 50'
-                ) {
+                if (ctx.dataset.label === 'SMA 20' || ctx.dataset.label === 'SMA 50') {
                   const val = ctx.parsed.y
-                  return val != null
-                    ? `${ctx.dataset.label}: ${val.toFixed(2)}`
-                    : ''
+                  return val != null ? `${ctx.dataset.label}: ${val.toFixed(2)}` : ''
                 }
                 return ''
               },
             }
           : undefined,
+      },
+      legend: { display: false },
     },
-    legend: {
-      display: false,
+    scales: {
+      x: {
+        display: !props.compact,
+        grid: { color: 'rgba(42, 46, 57, 0.5)' },
+        ticks: { color: '#787b86', maxTicksLimit: 8 },
+      },
+      y: {
+        display: !props.compact,
+        grid: { color: 'rgba(42, 46, 57, 0.5)' },
+        ticks: { color: '#787b86' },
+        min: isCandle ? yBounds.value.min : undefined,
+        max: isCandle ? yBounds.value.max : undefined,
+      },
     },
-  },
-  scales: {
-    x: {
-      display: !props.compact,
-      grid: { color: 'rgba(42, 46, 57, 0.5)' },
-      ticks: { color: '#787b86', maxTicksLimit: 8 },
-    },
-    y: {
-      display: !props.compact,
-      grid: { color: 'rgba(42, 46, 57, 0.5)' },
-      ticks: { color: '#787b86' },
-    },
-  },
-  interaction: {
-    mode: 'index',
-    intersect: false,
-  },
-}))
+    interaction: { mode: 'index', intersect: false },
+  }
+})
 
 const currentComponent = computed(() =>
   chartMode.value === 'line' || props.compact ? Line : Bar,
@@ -441,7 +447,7 @@ const currentComponent = computed(() =>
 
 .chart-wrapper {
   width: 100%;
-  height: 300px;
+  height: 360px;
 }
 
 .chart-wrapper.compact {

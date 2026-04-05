@@ -8,6 +8,23 @@ const auth = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const router = useRouter()
 const showUserMenu = ref(false)
+const showFundPopup = ref(false)
+const fundAmount = ref('')
+const fundMsg = ref('')
+
+async function handleDeposit() {
+  const amount = Number(fundAmount.value)
+  if (!amount || amount < 1) return
+  try {
+    await portfolioStore.deposit(amount)
+    fundMsg.value = `+$${amount.toLocaleString()}`
+    fundAmount.value = ''
+    showFundPopup.value = false
+    setTimeout(() => fundMsg.value = '', 3000)
+  } catch (e) {
+    fundMsg.value = e.message
+  }
+}
 
 function switchMode(newMode) {
   portfolioStore.setMode(newMode)
@@ -26,11 +43,17 @@ async function handleLogout() {
 <template>
   <nav class="sidebar">
     <div class="logo">
-      <div class="logo-mark">
-        <span class="logo-l">L</span>
-        <span class="logo-dash">-</span>
-        <span class="logo-w">W</span>
-      </div>
+      <svg class="logo-svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <rect width="36" height="36" rx="8" fill="url(#logoGrad)" />
+        <path d="M8 24V10h3v11h5v3H8Z" fill="#0a0e17" />
+        <path d="M18 24l3-14h0.5l2.5 8 2.5-8H27l3 14h-3l-1.5-7.5L23 24.5h-1l-2.5-7.5L18 24h-1Z" fill="#0a0e17" />
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36">
+            <stop stop-color="#f7931a" />
+            <stop offset="1" stop-color="#e8730e" />
+          </linearGradient>
+        </defs>
+      </svg>
       <span class="logo-text">L-W Trade</span>
     </div>
 
@@ -54,10 +77,20 @@ async function handleLogout() {
     <div v-if="auth.isAuthenticated && portfolioStore.portfolio" class="balance-display">
       <div class="balance-header">
         <span class="balance-label">Solde disponible</span>
-        <button class="add-funds-mini" @click="$router.push('/portfolio')" title="Ajouter des fonds">+</button>
+        <button class="add-funds-mini" @click="showFundPopup = !showFundPopup" title="Ajouter des fonds">+</button>
       </div>
       <span class="balance-value">${{ portfolioStore.portfolio.balance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
       <span class="balance-total">Total: ${{ portfolioStore.portfolio.totalValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+      <span v-if="fundMsg" class="fund-msg">{{ fundMsg }}</span>
+
+      <div v-if="showFundPopup" class="fund-popup">
+        <div class="fund-popup-title">{{ portfolioStore.mode === 'demo' ? 'Fonds fictifs' : 'Deposer' }}</div>
+        <div class="fund-chips">
+          <button v-for="a in [100, 1000, 5000, 10000, 50000]" :key="a" class="fund-chip" @click="fundAmount = a">${{ a.toLocaleString() }}</button>
+        </div>
+        <input v-model.number="fundAmount" type="number" min="1" placeholder="Montant" class="fund-input" @keyup.enter="handleDeposit" />
+        <button class="fund-go" @click="handleDeposit" :disabled="!fundAmount || fundAmount < 1">Confirmer</button>
+      </div>
     </div>
 
     <div class="nav-links">
@@ -144,22 +177,8 @@ async function handleLogout() {
   border-bottom: 1px solid var(--border);
 }
 
-.logo-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, var(--accent), #e8830e);
-  border-radius: 8px;
-  font-weight: 900;
-  font-size: 11px;
-  color: #000;
-  letter-spacing: -0.5px;
-}
-
-.logo-dash {
-  margin: 0 -1px;
+.logo-svg {
+  flex-shrink: 0;
 }
 
 .logo-text {
@@ -257,6 +276,84 @@ async function handleLogout() {
   color: var(--text-secondary);
   margin-top: 2px;
 }
+
+.fund-msg {
+  display: block;
+  font-size: 12px;
+  color: var(--green);
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.fund-popup {
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.fund-popup-title {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.fund-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.fund-chip {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fund-chip:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.fund-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  margin-bottom: 6px;
+}
+
+.fund-input:focus {
+  border-color: var(--green);
+}
+
+.fund-go {
+  width: 100%;
+  padding: 6px;
+  background: var(--green);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fund-go:hover { opacity: 0.9; }
+.fund-go:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .nav-links {
   flex: 1;
