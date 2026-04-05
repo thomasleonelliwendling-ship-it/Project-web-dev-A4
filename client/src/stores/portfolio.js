@@ -18,10 +18,10 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     }
   }
 
-  async function buyStock(symbol, quantity) {
+  async function buyStock(symbol, quantity, stopLoss = null, takeProfit = null) {
     const data = await apiFetch('/portfolio/buy', {
       method: 'POST',
-      body: JSON.stringify({ symbol, quantity: Number(quantity), mode: mode.value }),
+      body: JSON.stringify({ symbol, quantity: Number(quantity), mode: mode.value, stopLoss, takeProfit }),
     })
     await fetchPortfolio()
     return data

@@ -50,7 +50,9 @@ async function handleTrade() {
   try {
     let data
     if (tradeType.value === 'buy') {
-      data = await portfolioStore.buyStock(stock.value.symbol, quantity.value)
+      const sl = stopLoss.value ? Number(stopLoss.value) : null
+      const tp = takeProfit.value ? Number(takeProfit.value) : null
+      data = await portfolioStore.buyStock(stock.value.symbol, quantity.value, sl, tp)
     } else {
       data = await portfolioStore.sellStock(stock.value.symbol, quantity.value)
     }

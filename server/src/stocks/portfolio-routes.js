@@ -65,7 +65,7 @@ function portfolioRoutes(app) {
   }, async (request, reply) => {
     try {
       const userId = request.user.sub
-      const { symbol, quantity, mode: bodyMode } = request.body
+      const { symbol, quantity, mode: bodyMode, stopLoss: slInput, takeProfit: tpInput } = request.body
       const mode = bodyMode === 'live' ? 'live' : 'demo'
 
       if (!symbol || !quantity || quantity <= 0) {
@@ -99,12 +99,17 @@ function portfolioRoutes(app) {
         const totalCost = existingHolding.averageCost * existingHolding.quantity + total
         existingHolding.quantity += qty
         existingHolding.averageCost = totalCost / existingHolding.quantity
+        // Mettre a jour SL/TP si fournis
+        if (slInput !== undefined && slInput !== null) existingHolding.stopLoss = slInput
+        if (tpInput !== undefined && tpInput !== null) existingHolding.takeProfit = tpInput
       } else {
         portfolio.holdings.push({
           stock: stock._id,
           symbol: stock.symbol,
           quantity: qty,
           averageCost: stock.currentPrice,
+          stopLoss: slInput || null,
+          takeProfit: tpInput || null,
         })
       }
 
