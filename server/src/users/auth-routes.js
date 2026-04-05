@@ -70,30 +70,37 @@ function authRoutes(app) {
     const passwordHash = await hashPassword(password)
     const validationToken = randomBytes(32).toString('hex')
 
-    // Essayer d'envoyer l'email AVANT de créer le compte
-    try {
-      await sendVerificationEmail(app, normalizedEmail, validationToken)
-    } catch (error) {
-      app.log.error({
-        err: error,
-        email: normalizedEmail,
-      }, 'Failed to send registration email')
+    // En production, créer le compte directement comme vérifié (SMTP bloqué sur Render)
+    // En développement, envoyer un email de vérification
+    if (config.env !== 'production') {
+      try {
+        await sendVerificationEmail(app, normalizedEmail, validationToken)
+      } catch (error) {
+        app.log.error({
+          err: error,
+          email: normalizedEmail,
+        }, 'Failed to send registration email')
 
-      return reply.status(503).send({
-        error: 'Impossible d\'envoyer l\'email de validation. Veuillez réessayer plus tard.',
-      })
+        return reply.status(503).send({
+          error: 'Impossible d\'envoyer l\'email de validation. Veuillez réessayer plus tard.',
+        })
+      }
     }
 
-    // Email envoyé avec succès — créer le compte
     const user = await User.create({
       email: normalizedEmail,
       username: `${username}-${validationToken.slice(0, 6)}`,
       passwordHash,
-      validationToken,
+      validationToken: config.env === 'production' ? null : validationToken,
+      emailVerified: config.env === 'production',
     })
 
+    const message = config.env === 'production'
+      ? 'Compte cree avec succes. Vous pouvez vous connecter.'
+      : 'Compte cree avec succes. Verifiez votre email pour confirmer votre compte.'
+
     return reply.status(201).send(withVerificationDebugData({
-      message: 'Compte cree avec succes. Verifiez votre email pour confirmer votre compte.',
+      message,
       email: user.email,
     }, validationToken))
   })
