@@ -45,12 +45,11 @@ async function handleLogout() {
     <div class="logo">
       <svg class="logo-svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
         <rect width="36" height="36" rx="8" fill="url(#logoGrad)" />
-        <path d="M8 24V10h3v11h5v3H8Z" fill="#0a0e17" />
-        <path d="M18 24l3-14h0.5l2.5 8 2.5-8H27l3 14h-3l-1.5-7.5L23 24.5h-1l-2.5-7.5L18 24h-1Z" fill="#0a0e17" />
+        <text x="18" y="24" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" fill="#0a0e17" letter-spacing="-1">LW</text>
         <defs>
           <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36">
             <stop stop-color="#f7931a" />
-            <stop offset="1" stop-color="#e8730e" />
+            <stop offset="1" stop-color="#d4710a" />
           </linearGradient>
         </defs>
       </svg>
@@ -106,6 +105,10 @@ async function handleLogout() {
         <router-link to="/transactions" class="nav-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Transactions
+        </router-link>
+        <router-link to="/watchlist" class="nav-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Watchlist
         </router-link>
       </template>
     </div>
