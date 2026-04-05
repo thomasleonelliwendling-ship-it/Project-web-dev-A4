@@ -17,27 +17,9 @@ const tradeType = ref('buy')
 const message = ref('')
 const error = ref('')
 const tradeLoading = ref(false)
-const showFundModal = ref(false)
-const fundAmount = ref('')
-const fundMsg = ref('')
-
-async function handleAddFunds() {
-  const amount = Number(fundAmount.value)
-  if (!amount || amount < 1) return
-  try {
-    if (portfolioStore.mode === 'demo') {
-      await portfolioStore.deposit(amount)
-    } else {
-      await portfolioStore.deposit(amount)
-    }
-    fundMsg.value = `$${amount.toLocaleString()} ajoutes`
-    fundAmount.value = ''
-    showFundModal.value = false
-    setTimeout(() => fundMsg.value = '', 3000)
-  } catch (e) {
-    fundMsg.value = e.message
-  }
-}
+const stopLoss = ref('')
+const takeProfit = ref('')
+const showAdvanced = ref(false)
 
 const stock = computed(() => stocksStore.currentStock)
 
@@ -115,26 +97,33 @@ async function handleTrade() {
         <h2>Passer un ordre</h2>
 
         <div class="trade-tabs">
-          <button
-            :class="{ active: tradeType === 'buy' }"
-            @click="tradeType = 'buy'"
-            class="tab-btn buy-tab"
-          >
-            Acheter
-          </button>
-          <button
-            :class="{ active: tradeType === 'sell' }"
-            @click="tradeType = 'sell'"
-            class="tab-btn sell-tab"
-          >
-            Vendre
-          </button>
+          <button :class="{ active: tradeType === 'buy' }" @click="tradeType = 'buy'" class="tab-btn buy-tab">Acheter</button>
+          <button :class="{ active: tradeType === 'sell' }" @click="tradeType = 'sell'" class="tab-btn sell-tab">Vendre</button>
         </div>
 
         <div class="trade-form">
           <div class="form-group">
             <label>Quantite</label>
             <input v-model.number="quantity" type="number" min="1" step="1" />
+          </div>
+
+          <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+            {{ showAdvanced ? 'Masquer' : 'Stop Loss / Take Profit' }}
+            <svg :class="{ open: showAdvanced }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+
+          <div v-if="showAdvanced" class="advanced-fields">
+            <div class="form-row">
+              <div class="form-group half">
+                <label>Stop Loss ($)</label>
+                <input v-model.number="stopLoss" type="number" min="0" step="0.01" :placeholder="`ex: ${(stock.currentPrice * 0.95).toFixed(2)}`" />
+              </div>
+              <div class="form-group half">
+                <label>Take Profit ($)</label>
+                <input v-model.number="takeProfit" type="number" min="0" step="0.01" :placeholder="`ex: ${(stock.currentPrice * 1.1).toFixed(2)}`" />
+              </div>
+            </div>
+            <p class="hint">Les ordres SL/TP sont indicatifs en mode demo</p>
           </div>
 
           <div class="trade-summary">
@@ -150,46 +139,26 @@ async function handleTrade() {
               <span>Total</span>
               <span>{{ formatPrice(totalCost) }}</span>
             </div>
-            <div class="summary-row" v-if="portfolioStore.portfolio">
-              <span>Solde disponible</span>
-              <span>{{ formatPrice(portfolioStore.portfolio.balance) }}</span>
+            <div class="summary-row" v-if="stopLoss">
+              <span>Stop Loss</span>
+              <span class="sl-val">{{ formatPrice(stopLoss) }}</span>
             </div>
+            <div class="summary-row" v-if="takeProfit">
+              <span>Take Profit</span>
+              <span class="tp-val">{{ formatPrice(takeProfit) }}</span>
+            </div>
+          </div>
+
+          <div class="balance-row" v-if="portfolioStore.portfolio">
+            <span>Solde : {{ formatPrice(portfolioStore.portfolio.balance) }}</span>
+            <router-link to="/portfolio" class="fund-link">+ Fonds</router-link>
           </div>
 
           <p v-if="error" class="error-msg">{{ error }}</p>
           <p v-if="message" class="success-msg">{{ message }}</p>
-          <p v-if="fundMsg" class="success-msg">{{ fundMsg }}</p>
 
-          <button v-if="!showFundModal" type="button" class="add-funds-btn" @click="showFundModal = true">
-            + Ajouter des fonds
-          </button>
-          <div v-if="showFundModal" class="fund-modal">
-            <div class="fund-header">
-              <span>{{ portfolioStore.mode === 'demo' ? 'Ajouter des fonds (fictifs)' : 'Deposer des fonds' }}</span>
-              <button class="fund-close" @click="showFundModal = false">&times;</button>
-            </div>
-            <div v-if="portfolioStore.mode === 'live'" class="card-icons">
-              <span class="card-badge visa">VISA</span>
-              <span class="card-badge mc">MC</span>
-              <span class="card-badge cb">CB</span>
-            </div>
-            <div class="fund-amounts">
-              <button v-for="a in [1000, 5000, 10000, 50000]" :key="a" class="amount-chip" @click="fundAmount = a">
-                ${{ a.toLocaleString() }}
-              </button>
-            </div>
-            <input v-model.number="fundAmount" type="number" min="1" placeholder="Montant personnalise" class="fund-input" />
-            <button class="fund-confirm" @click="handleAddFunds">Confirmer le depot</button>
-          </div>
-
-          <button
-            @click="handleTrade"
-            class="trade-btn"
-            :class="tradeType"
-            :disabled="tradeLoading || quantity < 1"
-          >
-            {{ tradeLoading ? 'En cours...' : (tradeType === 'buy' ? 'Acheter' : 'Vendre') }}
-            {{ stock.symbol }}
+          <button @click="handleTrade" class="trade-btn" :class="tradeType" :disabled="tradeLoading || quantity < 1">
+            {{ tradeLoading ? 'En cours...' : (tradeType === 'buy' ? 'Acheter' : 'Vendre') }} {{ stock.symbol }}
           </button>
         </div>
       </div>
@@ -505,120 +474,79 @@ async function handleTrade() {
   text-decoration: underline;
 }
 
-.add-funds-btn {
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   width: 100%;
-  padding: 8px;
-  margin-top: 8px;
+  padding: 6px;
+  margin-bottom: 12px;
   background: transparent;
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.add-funds-btn:hover {
+.advanced-toggle:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.fund-modal {
-  margin-top: 12px;
-  padding: 14px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+.advanced-toggle svg {
+  transition: transform 0.2s;
 }
 
-.fund-header {
+.advanced-toggle svg.open {
+  transform: rotate(180deg);
+}
+
+.advanced-fields {
+  margin-bottom: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.form-group.half {
+  flex: 1;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.sl-val { color: var(--red); }
+.tp-val { color: var(--green); }
+
+.balance-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-}
-
-.fund-close {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.card-icons {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.card-badge {
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.card-badge.visa { background: #1a1f71; color: #fff; }
-.card-badge.mc { background: #eb001b; color: #fff; }
-.card-badge.cb { background: var(--green); color: #fff; }
-
-.fund-amounts {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.amount-chip {
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.amount-chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.fund-input {
-  width: 100%;
   padding: 8px 10px;
-  background: var(--bg-input);
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: 6px;
-  color: var(--text-primary);
   font-size: 13px;
-  outline: none;
-  margin-bottom: 8px;
+  color: var(--text-secondary);
 }
 
-.fund-input:focus {
-  border-color: var(--accent);
-}
-
-.fund-confirm {
-  width: 100%;
-  padding: 8px;
-  background: var(--green);
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 13px;
+.fund-link {
+  color: var(--green);
+  font-size: 12px;
   font-weight: 600;
-  cursor: pointer;
+  text-decoration: none;
 }
 
-.fund-confirm:hover {
-  opacity: 0.9;
+.fund-link:hover {
+  text-decoration: underline;
 }
 </style>

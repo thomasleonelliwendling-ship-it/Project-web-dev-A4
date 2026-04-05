@@ -52,8 +52,12 @@ async function handleLogout() {
     </div>
 
     <div v-if="auth.isAuthenticated && portfolioStore.portfolio" class="balance-display">
-      <span class="balance-label">Solde disponible</span>
+      <div class="balance-header">
+        <span class="balance-label">Solde disponible</span>
+        <button class="add-funds-mini" @click="$router.push('/portfolio')" title="Ajouter des fonds">+</button>
+      </div>
       <span class="balance-value">${{ portfolioStore.portfolio.balance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+      <span class="balance-total">Total: ${{ portfolioStore.portfolio.totalValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
     </div>
 
     <div class="nav-links">
@@ -88,10 +92,22 @@ async function handleLogout() {
           <span class="menu-value">{{ auth.user?.email }}</span>
         </div>
         <div class="menu-info">
+          <span class="menu-label">Mode</span>
+          <span class="menu-value mode-val" :class="portfolioStore.mode">{{ portfolioStore.mode === 'demo' ? 'Demo Trade' : 'Live Trade' }}</span>
+        </div>
+        <div class="menu-info">
+          <span class="menu-label">Solde</span>
+          <span class="menu-value">${{ portfolioStore.portfolio?.balance?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00' }}</span>
+        </div>
+        <div class="menu-info">
           <span class="menu-label">Membre depuis</span>
           <span class="menu-value">{{ new Date(auth.user?.createdAt).toLocaleDateString('fr-FR') }}</span>
         </div>
         <div class="menu-divider"></div>
+        <button class="menu-btn" @click="$router.push('/portfolio'); showUserMenu = false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/></svg>
+          Mon portefeuille
+        </button>
         <button class="menu-btn logout" @click="handleLogout">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Deconnexion
@@ -194,19 +210,52 @@ async function handleLogout() {
   border-radius: 8px;
 }
 
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
 .balance-label {
-  display: block;
   font-size: 11px;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+}
+
+.add-funds-mini {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(38, 166, 154, 0.15);
+  border: 1px solid rgba(38, 166, 154, 0.3);
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.add-funds-mini:hover {
+  background: rgba(38, 166, 154, 0.3);
 }
 
 .balance-value {
+  display: block;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.balance-total {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
 }
 
 .nav-links {
@@ -350,10 +399,18 @@ async function handleLogout() {
   transition: all 0.15s;
 }
 
+.menu-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
 .menu-btn.logout:hover {
   color: var(--red);
   background: rgba(239, 83, 80, 0.08);
 }
+
+.mode-val.demo { color: var(--accent); }
+.mode-val.live { color: var(--green); }
 
 .login-btn {
   display: block;
