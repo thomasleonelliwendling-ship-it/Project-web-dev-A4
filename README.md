@@ -1,176 +1,202 @@
-# WebDev ESILV Starter
+# L-W Trade — Plateforme de Trading
 
-Starter de projet pour les étudiants de 4e année FinTech.
+Application web de trading simulee construite avec **Vue 3** (frontend) et **Fastify** (backend), en architecture monorepo.
 
-Le dépôt est volontairement incomplet : il fournit une base de travail, une structure de monorepo, un front et un back séparés, mais il reste du travail d’implémentation. Le minimum attendu est d’implémenter tout ce qui est indiqué dans les `TODO` du projet.
+## Demarrage rapide
 
-## Architecture
+### Prerequis
 
-Ce projet suit une architecture de monorepo :
+- **Node.js 20+** (recommande : 22 ou 24)
+- **npm** (inclus avec Node.js)
+- **MongoDB** au choix :
+  - **Option A** : [MongoDB Atlas](https://cloud.mongodb.com) (gratuit, aucune installation)
+  - **Option B** : Docker avec le `docker-compose.yml` fourni
 
-- `client/` contient l’application front-end
-- `server/` contient l’application back-end
-- `package.json` à la racine déclare les workspaces npm
-- `turbo.json` configure Turborepo pour orchestrer les scripts du monorepo
-
-### Monorepo
-
-Le dépôt utilise les [**npm workspaces**](https://docs.npmjs.com/cli/v7/using-npm/workspaces?v=true) pour gérer plusieurs applications dans un seul repository. Cela permet notamment :
-
-- d’installer les dépendances depuis la racine
-- de lancer les scripts des sous-projets depuis un point central
-- de garder une structure claire entre front et back
-
-### Workspaces npm
-
-Les workspaces déclarés à la racine sont :
-
-- `client`
-- `server`
-
-Les dépendances de chaque application restent isolées dans leur propre [`package.json`](https://docs.npmjs.com/cli/v11/configuring-npm/package-json), tandis que la racine pilote l’ensemble du dépôt.
-
-### Turborepo
-
-Le projet utilise [**Turborepo**](https://turborepo.dev/) pour orchestrer les tâches du monorepo.
-
-Exemple :
+Verification :
 
 ```bash
-npm run dev
-```
-
-Cette commande exécute :
-
-```bash
-turbo run dev --parallel
-```
-
-Autrement dit, les scripts `dev` des workspaces sont lancés en parallèle.
-
-## Applications
-
-### Front-end : `client/`
-
-L’application front est basée sur :
-
-- [**Vue 3**](https://vuejs.org/) (version beta dans ce starter)
-- [**Vite**](https://vite.dev/) pour le bundling et le serveur de développement
-- [**Vue Router**](https://router.vuejs.org/) pour le routage
-- [**Pinia**](https://pinia.vuejs.org/) pour la gestion d’état
-- [**Vitest**](https://vitest.dev/) pour les tests unitaires
-- [**Playwright**](https://playwright.dev/) pour les tests end-to-end
-- [**ESLint**](https://eslint.org/), [**Oxlint**](https://oxc.rs/docs/guide/usage/linter) et [**Oxfmt**](https://oxc.rs/blog/2026-02-24-oxfmt-beta) pour la qualité et le formatage
-
-### Back-end : `server/`
-
-L’application back est actuellement basée sur :
-
-- [**Node.js**](https://nodejs.org/fr)
-- [**Fastify**](https://fastify.dev/) pour construire l’API HTTP
-
-Le serveur est lancé en mode développement avec :
-
-```bash
-node --watch src/index.js
-```
-
-Le back est conçu pour être enrichi pendant le projet : routes, logique métier, persistance, authentification, validation, gestion d’erreurs, etc.
-
-## Prérequis
-
-Prérequits recommandés :
-
-- **Node.js 24 ou plus récent**
-- **npm** compatible avec la version de Node installée
-
-Pourquoi Node 24+ :
-
-- pour travailler avec une version moderne et homogène sur tout le projet
-- pour éviter les écarts d’environnement entre machines
-- pour bénéficier d’un runtime récent côté front comme côté back
-
-Vérification :
-
-```bash
-node -v
+node -v   # v20+ requis
 npm -v
 ```
 
-## Installation
-
-Depuis la racine du projet :
+### Installation
 
 ```bash
+git clone <url-du-repo>
+cd Project-Web-Dev-A4-main
 npm install
 ```
 
-Cette commande installe les dépendances du monorepo et des workspaces.
+Cette commande installe les dependances de la racine, du client et du serveur (workspaces npm).
 
-## Lancement en développement
+### Configuration
 
-Depuis la racine :
+Copiez le fichier d'exemple et remplissez-le :
+
+```bash
+cp server/.env.example server/.env.development.local
+```
+
+Editez `server/.env.development.local` et renseignez au minimum `MONGODB_URI`.
+
+**Avec MongoDB Atlas (le plus simple) :**
+
+1. Creez un compte gratuit sur [cloud.mongodb.com](https://cloud.mongodb.com)
+2. Creez un cluster (gratuit M0)
+3. Ajoutez votre IP dans Network Access (ou `0.0.0.0/0` pour autoriser tout)
+4. Creez un utilisateur base de donnees
+5. Copiez la connection string dans `MONGODB_URI`
+
+**Avec Docker :**
+
+```bash
+docker compose up -d
+```
+
+Puis utilisez dans le `.env.development.local` :
+
+```
+MONGODB_URI=mongodb://stan:stan@localhost:35115/myapp?authSource=myapp
+```
+
+### Lancement
 
 ```bash
 npm run dev
 ```
 
-Cela lance les applications `client` et `server` en parallèle via Turborepo.
+Cela lance en parallele :
+- **Frontend** (Vue 3 + Vite) sur [http://localhost:5173](http://localhost:5173)
+- **Backend** (Fastify) sur [http://localhost:3000](http://localhost:3000)
 
-Il est aussi possible de lancer une application individuellement depuis son dossier :
+Le proxy Vite redirige `/api/*` vers le backend automatiquement.
 
-```bash
-cd client
-npm run dev
+Au premier lancement, le backend genere automatiquement les donnees de marche (actions, cryptos, indices).
+
+### Commandes utiles
+
+| Commande | Description |
+|---|---|
+| `npm run dev` | Lance client + serveur en parallele |
+| `npm run lint` | Lint du code (client + serveur) |
+| `cd client && npm run build` | Build de production du frontend |
+| `cd client && npm run test:unit` | Tests unitaires |
+
+## Architecture
+
 ```
-
-```bash
-cd server
-npm run dev
-```
-
-## Ce qui est attendu
-
-Ce dépôt est un **starter**, pas une application terminée.
-
-Vous devez au minimum :
-
-- créer et remplir le fichier .env.development.local à partir de .env-example
-- implémenter tout ce qui est marqué `TODO`
-- compléter les routes, contrôleurs et services manquants
-- finaliser la logique métier côté back-end
-- structurer proprement les échanges entre front et back
-- ajouter les validations nécessaires
-- gérer correctement les erreurs
-- tester les comportements importants
-- modifier ce README.md pour enlever les instructions et ne garder que de la documentation de ce qui aura été fait
-
-Selon les consignes du module, vous pourrez aussi être amenés à :
-
-- implémenter l’authentification et l’autorisation
-- sécuriser les flux applicatifs
-- documenter vos choix techniques
-
-## Conseils de travail
-
-- Travaillez par petites étapes validées.
-- Ne laissez pas les `TODO` s’accumuler jusqu’à la fin.
-- Gardez une séparation claire entre front (`client`) et back (`server`).
-- Faites évoluer le projet de manière cohérente avec la structure du monorepo.
-
-## Structure du dépôt
-
-```text
 .
-├── client/            # application front-end
-├── server/            # application back-end
-├── mongo-init/        # fichier de démarrage du conteneur mongodb (optionnel)
-├── .github/           # configuration pour copilot (et éventuellement plus tard pour les GHA)
-├── .vscode/           # configuration VSCode spécifique à ce projet
-├── package.json       # racine du monorepo
-├── eslint.config.mjs  # configuration du linter
-├── CLAUDE.md          # instructions spécifiques pour Claude Code (inclus les fichiers de copilote)
-├── AGENTS.md          # instructions spécifiques pour d’autres agents IA (inclus les fichiers de copilote)
-├── .editorconfig      # configuration basique des fichiers pour l’éditeur
-└── turbo.json         # orchestration des tâches
+├── client/                # Frontend Vue 3
+│   ├── src/
+│   │   ├── components/    # Composants reutilisables (AppNav, StockChart, etc.)
+│   │   ├── pages/         # Pages (Dashboard, Portfolio, Transactions, etc.)
+│   │   ├── stores/        # Stores Pinia (auth, stocks, portfolio)
+│   │   ├── router/        # Configuration Vue Router
+│   │   └── api.js         # Helper fetch centralise
+│   └── vite.config.js     # Config Vite + proxy API
+│
+├── server/                # Backend Fastify
+│   ├── src/
+│   │   ├── plugins/       # Plugins Fastify (auth JWT, mongoose)
+│   │   ├── users/         # Routes et schemas utilisateurs
+│   │   ├── stocks/        # Routes, schemas et seed des actifs
+│   │   ├── services/      # Mailer, SL/TP checker, daily summary
+│   │   ├── config.js      # Configuration centralisee
+│   │   └── app.js         # Point d'entree Fastify
+│   └── .env.example       # Variables d'environnement (a copier)
+│
+├── docker-compose.yml     # MongoDB local (optionnel)
+├── turbo.json             # Orchestration Turborepo
+└── package.json           # Monorepo npm workspaces
 ```
+
+## Stack technique
+
+### Frontend
+- **Vue 3** avec Composition API (`<script setup>`)
+- **Vite** (bundler + dev server)
+- **Vue Router** (routage SPA)
+- **Pinia** (gestion d'etat)
+- **Chart.js** + **vue-chartjs** (graphiques ligne + bougies)
+
+### Backend
+- **Fastify** (API REST)
+- **Mongoose** (ODM MongoDB)
+- **@fastify/jwt** + **@fastify/cookie** (authentification par cookie JWT)
+- **@fastify/cors** (gestion cross-origin)
+- **Nodemailer** (envoi d'emails)
+- **bcryptjs** (hashage mots de passe)
+
+## Fonctionnalites
+
+### Authentification
+- Inscription avec email, username, mot de passe
+- Connexion via JWT stocke dans un cookie httpOnly
+- Route `/users/me` pour recuperer l'utilisateur connecte
+
+### Marche / Dashboard
+- 28 actifs : 15 actions US, 7 cryptos, 6 indices/ETF
+- Prix simules avec micro-variations toutes les 30 secondes
+- Filtres par categorie (Tous, Actions, Crypto, Indices)
+- Top Hausse / Top Baisse
+- Apercu du portefeuille pour les utilisateurs connectes
+
+### Graphiques
+- Mode Ligne et mode Bougies japonaises
+- Periodes : 1J, 1S, 1M, 3M, 1A, 5A
+- Overlays SMA 20, SMA 50 (activables par checkbox)
+- Indicateurs techniques : RSI, MACD, Stochastic, Bollinger, ATR, Support/Resistance
+
+### Trading
+- Achat / vente avec quantites decimales (crypto-compatible)
+- Stop Loss / Take Profit configurables a l'achat ou depuis le portefeuille
+- Declenchement automatique des SL/TP avec vente et notification email
+- Mode Demo ($100,000 virtuels) et mode Live (depot simule)
+
+### Portefeuille
+- Positions ouvertes avec P&L en temps reel
+- Colonnes SL / TP visibles
+- Vente rapide et fermeture de position depuis le tableau
+- Modal SL/TP avec presets (-3%, -5%, -10%, +5%, +10%, +20%)
+
+### Transactions
+- Historique avec P&L par transaction
+- Filtrage par mode (demo/live)
+
+### Watchlist
+- Ajout / suppression d'actions favorites
+- Persistance localStorage
+
+### Parametres
+- Theme sombre / clair
+- Langue, devise, preferences de trading
+- Informations du compte
+
+### Emails
+- Email de bienvenue a l'inscription
+- Email lors du declenchement d'un Stop Loss
+- Email lors du declenchement d'un Take Profit
+- Bilan quotidien automatique (15h UTC)
+
+## Variables d'environnement
+
+Voir `server/.env.example` pour la liste complete.
+
+| Variable | Obligatoire | Description |
+|---|---|---|
+| `MONGODB_URI` | Oui | URI de connexion MongoDB |
+| `PORT` | Non | Port du serveur (defaut: 3000) |
+| `JWT_SECRET` | Non | Secret JWT (defaut: `change-me-in-production`) |
+| `SMTP_HOST` | Non | Serveur SMTP pour les emails |
+| `SMTP_USER` | Non | Utilisateur SMTP |
+| `SMTP_PASS` | Non | Mot de passe SMTP |
+
+## Deploiement
+
+- **Frontend** : deploye sur Vercel
+- **Backend** : deploye sur Render
+- **Base de donnees** : MongoDB Atlas
+
+## Auteur
+
+Thomas Leonelli-Wendling — ESILV A4 FinTech
