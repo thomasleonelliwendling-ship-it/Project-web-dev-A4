@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 
 import config from '../config.js'
-import { sendRegistrationEmail } from '../services/mailer.js'
+import { sendRegistrationEmail, sendWelcomeEmail } from '../services/mailer.js'
 import User from '../users/user-schema.js'
 import { hashPassword, verifyPassword } from '../utils/crypto.js'
 
@@ -94,6 +94,13 @@ function authRoutes(app) {
       validationToken: config.env === 'production' ? null : validationToken,
       emailVerified: config.env === 'production',
     })
+
+    // En production, envoyer un email de bienvenue (sans bloquer)
+    if (config.env === 'production') {
+      sendWelcomeEmail({ email: user.email, username }).catch((err) => {
+        app.log.error({ err, email: user.email }, 'Failed to send welcome email')
+      })
+    }
 
     const message = config.env === 'production'
       ? 'Compte cree avec succes. Vous pouvez vous connecter.'
@@ -202,14 +209,25 @@ function authRoutes(app) {
     })
 
     // ...et le stocker dans un cookie sécurisé
+    // sameSite: 'none' + secure: true requis pour cross-origin (Vercel → Render)
     reply.setCookie(config.jwt.cookieName, token, {
       path: '/',
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: config.env === 'production' ? 'none' : 'lax',
       secure: config.env === 'production',
     })
 
     return reply.send({ message: 'Authentification réussie' })
+  })
+
+  app.post('/logout', async (request, reply) => {
+    reply.clearCookie(config.jwt.cookieName, {
+      path: '/',
+      httpOnly: true,
+      sameSite: config.env === 'production' ? 'none' : 'lax',
+      secure: config.env === 'production',
+    })
+    return reply.send({ message: 'Deconnexion reussie' })
   })
 }
 

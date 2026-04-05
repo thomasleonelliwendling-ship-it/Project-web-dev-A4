@@ -23,6 +23,25 @@ function buildTransport() {
 
 const transporter = buildTransport()
 
+export async function sendWelcomeEmail({ email, username }) {
+  const info = await transporter.sendMail({
+    from: config.mail.from,
+    to: email,
+    subject: 'Bienvenue sur TradeView !',
+    text: `Bonjour ${username},\n\nVotre compte TradeView a ete cree avec succes.\nVous pouvez maintenant vous connecter et commencer a trader.\n\nBonne chance sur les marches !\nL'equipe TradeView`,
+    html: `
+      <h2>Bienvenue sur TradeView !</h2>
+      <p>Bonjour ${username},</p>
+      <p>Votre compte a ete cree avec succes.</p>
+      <p>Vous pouvez maintenant vous connecter et commencer a trader.</p>
+      <br>
+      <p>Bonne chance sur les marches !</p>
+      <p><em>L'equipe TradeView</em></p>
+    `,
+  })
+  return info
+}
+
 export async function sendRegistrationEmail({ email, verificationUrl }) {
   const info = await transporter.sendMail({
     from: config.mail.from,
