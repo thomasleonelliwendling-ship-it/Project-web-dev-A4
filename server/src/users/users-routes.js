@@ -32,7 +32,7 @@ function usersRoutes(app) {
   app.get('/me', {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
-    return reply.send({ user: request.user })
+    return reply.send({ user: request.currentUser })
   })
 
   app.get('', {

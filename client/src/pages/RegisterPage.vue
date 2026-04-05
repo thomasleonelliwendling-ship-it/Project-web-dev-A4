@@ -42,9 +42,9 @@ async function handleRegister() {
   <div class="auth-container">
     <div class="auth-card">
       <div class="auth-header">
-        <span class="auth-logo">B</span>
+        <span class="auth-logo">LW</span>
         <h1>Creer un compte</h1>
-        <p>Rejoignez TradeView et commencez a trader</p>
+        <p>Rejoignez L-W Trade et commencez a trader</p>
       </div>
 
       <form @submit.prevent="handleRegister" class="auth-form">

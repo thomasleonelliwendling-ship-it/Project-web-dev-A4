@@ -59,7 +59,7 @@ body {
 
 .main-content {
   flex: 1;
-  margin-left: 220px;
+  margin-left: 240px;
   padding: 24px;
 }
 

@@ -89,7 +89,7 @@ function authRoutes(app) {
 
     const user = await User.create({
       email: normalizedEmail,
-      username: `${username}-${validationToken.slice(0, 6)}`,
+      username,
       passwordHash,
       validationToken: config.env === 'production' ? null : validationToken,
       emailVerified: config.env === 'production',

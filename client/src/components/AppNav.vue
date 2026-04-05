@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { usePortfolioStore } from '../stores/portfolio.js'
@@ -6,6 +7,7 @@ import { usePortfolioStore } from '../stores/portfolio.js'
 const auth = useAuthStore()
 const portfolioStore = usePortfolioStore()
 const router = useRouter()
+const showUserMenu = ref(false)
 
 function switchMode(newMode) {
   portfolioStore.setMode(newMode)
@@ -16,6 +18,7 @@ function switchMode(newMode) {
 
 async function handleLogout() {
   await auth.logout()
+  showUserMenu.value = false
   router.push('/login')
 }
 </script>
@@ -23,8 +26,12 @@ async function handleLogout() {
 <template>
   <nav class="sidebar">
     <div class="logo">
-      <span class="logo-icon">B</span>
-      <span class="logo-text">TradeView</span>
+      <div class="logo-mark">
+        <span class="logo-l">L</span>
+        <span class="logo-dash">-</span>
+        <span class="logo-w">W</span>
+      </div>
+      <span class="logo-text">L-W Trade</span>
     </div>
 
     <div v-if="auth.isAuthenticated" class="mode-toggle">
@@ -44,25 +51,52 @@ async function handleLogout() {
       </button>
     </div>
 
+    <div v-if="auth.isAuthenticated && portfolioStore.portfolio" class="balance-display">
+      <span class="balance-label">Solde disponible</span>
+      <span class="balance-value">${{ portfolioStore.portfolio.balance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+    </div>
+
     <div class="nav-links">
       <router-link to="/" class="nav-link">
-        <span class="nav-icon">&#9632;</span> Dashboard
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
       </router-link>
       <template v-if="auth.isAuthenticated">
         <router-link to="/portfolio" class="nav-link">
-          <span class="nav-icon">&#9670;</span> Portfolio
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          Portfolio
         </router-link>
         <router-link to="/transactions" class="nav-link">
-          <span class="nav-icon">&#9654;</span> Transactions
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Transactions
         </router-link>
       </template>
     </div>
 
     <div class="nav-footer" v-if="auth.isAuthenticated">
-      <div class="user-info">
-        <span class="user-name">{{ auth.user?.username }}</span>
+      <div class="user-card" @click="showUserMenu = !showUserMenu">
+        <div class="user-avatar">{{ auth.user?.username?.charAt(0)?.toUpperCase() }}</div>
+        <div class="user-details">
+          <span class="user-name">{{ auth.user?.username }}</span>
+          <span class="user-email">{{ auth.user?.email }}</span>
+        </div>
+        <svg class="chevron" :class="{ open: showUserMenu }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
       </div>
-      <button class="logout-btn" @click="handleLogout">Deconnexion</button>
+      <div v-if="showUserMenu" class="user-menu">
+        <div class="menu-info">
+          <span class="menu-label">Email</span>
+          <span class="menu-value">{{ auth.user?.email }}</span>
+        </div>
+        <div class="menu-info">
+          <span class="menu-label">Membre depuis</span>
+          <span class="menu-value">{{ new Date(auth.user?.createdAt).toLocaleDateString('fr-FR') }}</span>
+        </div>
+        <div class="menu-divider"></div>
+        <button class="menu-btn logout" @click="handleLogout">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Deconnexion
+        </button>
+      </div>
     </div>
     <div class="nav-footer" v-else>
       <router-link to="/login" class="login-btn">Connexion</router-link>
@@ -76,7 +110,7 @@ async function handleLogout() {
   position: fixed;
   left: 0;
   top: 0;
-  width: 220px;
+  width: 240px;
   height: 100vh;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
@@ -89,33 +123,39 @@ async function handleLogout() {
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 20px 24px;
+  gap: 12px;
+  padding: 0 20px 20px;
   border-bottom: 1px solid var(--border);
 }
 
-.logo-icon {
-  background: var(--accent);
-  color: #000;
-  width: 32px;
-  height: 32px;
+.logo-mark {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent), #e8830e);
+  border-radius: 8px;
   font-weight: 900;
-  font-size: 18px;
-  border-radius: 6px;
+  font-size: 11px;
+  color: #000;
+  letter-spacing: -0.5px;
+}
+
+.logo-dash {
+  margin: 0 -1px;
 }
 
 .logo-text {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.3px;
 }
 
 .mode-toggle {
   display: flex;
-  margin: 16px 14px 0;
+  margin: 16px 16px 0;
   background: var(--bg-primary);
   border-radius: 8px;
   padding: 3px;
@@ -128,10 +168,12 @@ async function handleLogout() {
   border: none;
   border-radius: 6px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .mode-btn.active {
@@ -144,6 +186,29 @@ async function handleLogout() {
   color: #fff;
 }
 
+.balance-display {
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.balance-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.balance-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 .nav-links {
   flex: 1;
   padding: 16px 0;
@@ -152,8 +217,8 @@ async function handleLogout() {
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
+  gap: 12px;
+  padding: 11px 20px;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
@@ -171,39 +236,123 @@ async function handleLogout() {
   border-right: 3px solid var(--accent);
 }
 
-.nav-icon {
-  font-size: 10px;
-}
-
 .nav-footer {
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-top: 1px solid var(--border);
 }
 
-.user-info {
-  margin-bottom: 12px;
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #e8830e);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.user-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .user-name {
+  display: block;
   font-size: 13px;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.logout-btn {
+.user-email {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  transition: transform 0.2s;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.user-menu {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.menu-info {
+  margin-bottom: 10px;
+}
+
+.menu-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.menu-value {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   padding: 8px;
   background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
+  border: none;
   border-radius: 6px;
-  cursor: pointer;
+  color: var(--text-secondary);
   font-size: 13px;
+  cursor: pointer;
   transition: all 0.15s;
 }
 
-.logout-btn:hover {
-  border-color: var(--red);
+.menu-btn.logout:hover {
   color: var(--red);
+  background: rgba(239, 83, 80, 0.08);
 }
 
 .login-btn {
@@ -213,7 +362,7 @@ async function handleLogout() {
   background: var(--accent);
   color: #000;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;

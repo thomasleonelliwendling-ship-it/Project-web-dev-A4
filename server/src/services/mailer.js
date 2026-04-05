@@ -27,16 +27,16 @@ export async function sendWelcomeEmail({ email, username }) {
   const info = await transporter.sendMail({
     from: config.mail.from,
     to: email,
-    subject: 'Bienvenue sur TradeView !',
-    text: `Bonjour ${username},\n\nVotre compte TradeView a ete cree avec succes.\nVous pouvez maintenant vous connecter et commencer a trader.\n\nBonne chance sur les marches !\nL'equipe TradeView`,
+    subject: 'Bienvenue sur L-W Trade !',
+    text: `Bonjour ${username},\n\nVotre compte L-W Trade a ete cree avec succes.\nVous pouvez maintenant vous connecter et commencer a trader.\n\nBonne chance sur les marches !\nL'equipe L-W Trade`,
     html: `
-      <h2>Bienvenue sur TradeView !</h2>
+      <h2>Bienvenue sur L-W Trade !</h2>
       <p>Bonjour ${username},</p>
       <p>Votre compte a ete cree avec succes.</p>
       <p>Vous pouvez maintenant vous connecter et commencer a trader.</p>
       <br>
       <p>Bonne chance sur les marches !</p>
-      <p><em>L'equipe TradeView</em></p>
+      <p><em>L'equipe L-W Trade</em></p>
     `,
   })
   return info

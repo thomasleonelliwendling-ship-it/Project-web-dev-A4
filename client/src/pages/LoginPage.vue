@@ -29,8 +29,8 @@ async function handleLogin() {
   <div class="auth-container">
     <div class="auth-card">
       <div class="auth-header">
-        <span class="auth-logo">B</span>
-        <h1>TradeView</h1>
+        <span class="auth-logo">LW</span>
+        <h1>L-W Trade</h1>
         <p>Connectez-vous pour acceder au marche</p>
       </div>
 
