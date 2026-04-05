@@ -12,6 +12,11 @@ const sellQty = ref(1)
 const sellMsg = ref('')
 const sellError = ref('')
 const sellLoading = ref(false)
+const slTpModal = ref(null)
+const slValue = ref('')
+const tpValue = ref('')
+const slTpMsg = ref('')
+const slTpLoading = ref(false)
 
 onMounted(() => {
   portfolioStore.fetchPortfolio()
@@ -65,6 +70,29 @@ function sellAll(holding) {
   sellQty.value = holding.quantity
   sellMsg.value = ''
   sellError.value = ''
+}
+
+function openSlTpModal(holding) {
+  slTpModal.value = holding
+  slValue.value = holding.stopLoss || ''
+  tpValue.value = holding.takeProfit || ''
+  slTpMsg.value = ''
+}
+
+async function handleSaveSlTp() {
+  if (!slTpModal.value) return
+  slTpLoading.value = true
+  try {
+    const sl = slValue.value ? Number(slValue.value) : null
+    const tp = tpValue.value ? Number(tpValue.value) : null
+    await portfolioStore.setSlTp(slTpModal.value.symbol, sl, tp)
+    slTpMsg.value = 'SL/TP mis a jour'
+    setTimeout(() => { slTpModal.value = null; slTpMsg.value = '' }, 1500)
+  } catch (e) {
+    slTpMsg.value = e.message
+  } finally {
+    slTpLoading.value = false
+  }
 }
 
 function formatPrice(price) {
@@ -124,6 +152,8 @@ function formatChange(val) {
               <th>Cours</th>
               <th>Valeur</th>
               <th>P&amp;L</th>
+              <th>SL</th>
+              <th>TP</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -139,7 +169,16 @@ function formatChange(val) {
               <td :class="h.gainLoss >= 0 ? 'positive' : 'negative'">
                 {{ formatChange(h.gainLoss) }} ({{ formatChange(h.gainLossPercent) }}%)
               </td>
+              <td>
+                <span v-if="h.stopLoss" class="sl-badge" :title="`Stop Loss: $${h.stopLoss}`">{{ formatPrice(h.stopLoss) }}</span>
+                <span v-else class="no-sltp">—</span>
+              </td>
+              <td>
+                <span v-if="h.takeProfit" class="tp-badge" :title="`Take Profit: $${h.takeProfit}`">{{ formatPrice(h.takeProfit) }}</span>
+                <span v-else class="no-sltp">—</span>
+              </td>
               <td class="actions-cell">
+                <button class="sltp-btn" @click="openSlTpModal(h)" title="Stop Loss / Take Profit">SL/TP</button>
                 <button class="sell-btn" @click="openSellModal(h)">Vendre</button>
                 <button class="close-pos-btn" @click="sellAll(h)" title="Fermer la position">Fermer</button>
               </td>
@@ -187,6 +226,73 @@ function formatChange(val) {
           <div class="modal-actions">
             <button class="modal-sell-btn" @click="handleQuickSell" :disabled="sellLoading || sellQty < 1 || sellQty > sellModal.quantity">
               {{ sellLoading ? 'En cours...' : `Vendre ${sellQty} ${sellModal.symbol}` }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- SL/TP modal -->
+    <div v-if="slTpModal" class="modal-overlay" @click.self="slTpModal = null">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>SL / TP — {{ slTpModal.symbol }}</h3>
+          <button class="close-btn" @click="slTpModal = null">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-info-row">
+            <span>Prix d'entree (PRU)</span>
+            <span>{{ formatPrice(slTpModal.averageCost) }}</span>
+          </div>
+          <div class="modal-info-row">
+            <span>Prix actuel</span>
+            <span>{{ formatPrice(slTpModal.currentPrice) }}</span>
+          </div>
+          <div class="modal-info-row">
+            <span>Quantite</span>
+            <span>{{ slTpModal.quantity }}</span>
+          </div>
+
+          <div class="sltp-fields">
+            <div class="sltp-field">
+              <label>
+                <span class="sltp-dot sl-dot"></span> Stop Loss ($)
+              </label>
+              <input v-model.number="slValue" type="number" min="0" step="0.01" :placeholder="`ex: ${(slTpModal.averageCost * 0.95).toFixed(2)}`" />
+              <span v-if="slValue && slTpModal.averageCost" class="sltp-pct negative">
+                {{ ((slValue - slTpModal.averageCost) / slTpModal.averageCost * 100).toFixed(1) }}%
+              </span>
+            </div>
+            <div class="sltp-field">
+              <label>
+                <span class="sltp-dot tp-dot"></span> Take Profit ($)
+              </label>
+              <input v-model.number="tpValue" type="number" min="0" step="0.01" :placeholder="`ex: ${(slTpModal.averageCost * 1.10).toFixed(2)}`" />
+              <span v-if="tpValue && slTpModal.averageCost" class="sltp-pct positive">
+                +{{ ((tpValue - slTpModal.averageCost) / slTpModal.averageCost * 100).toFixed(1) }}%
+              </span>
+            </div>
+          </div>
+
+          <div class="sltp-presets">
+            <span class="preset-label">Presets SL:</span>
+            <button class="preset-btn" @click="slValue = +(slTpModal.averageCost * 0.97).toFixed(2)">-3%</button>
+            <button class="preset-btn" @click="slValue = +(slTpModal.averageCost * 0.95).toFixed(2)">-5%</button>
+            <button class="preset-btn" @click="slValue = +(slTpModal.averageCost * 0.90).toFixed(2)">-10%</button>
+            <button class="preset-btn clear" @click="slValue = ''">Suppr.</button>
+          </div>
+          <div class="sltp-presets">
+            <span class="preset-label">Presets TP:</span>
+            <button class="preset-btn" @click="tpValue = +(slTpModal.averageCost * 1.05).toFixed(2)">+5%</button>
+            <button class="preset-btn" @click="tpValue = +(slTpModal.averageCost * 1.10).toFixed(2)">+10%</button>
+            <button class="preset-btn" @click="tpValue = +(slTpModal.averageCost * 1.20).toFixed(2)">+20%</button>
+            <button class="preset-btn clear" @click="tpValue = ''">Suppr.</button>
+          </div>
+
+          <p v-if="slTpMsg" class="success-msg">{{ slTpMsg }}</p>
+
+          <div class="modal-actions">
+            <button class="modal-save-btn" @click="handleSaveSlTp" :disabled="slTpLoading">
+              {{ slTpLoading ? 'Enregistrement...' : 'Enregistrer SL / TP' }}
             </button>
           </div>
         </div>
@@ -277,4 +383,35 @@ function formatChange(val) {
 .modal-sell-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .error-msg { color: var(--red); font-size: 13px; margin: 8px 0; }
 .success-msg { color: var(--green); font-size: 13px; margin: 8px 0; }
+
+/* SL/TP badges in table */
+.sl-badge { display: inline-block; padding: 2px 8px; background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.25); border-radius: 4px; color: var(--red); font-size: 12px; font-weight: 600; }
+.tp-badge { display: inline-block; padding: 2px 8px; background: rgba(38, 166, 154, 0.12); border: 1px solid rgba(38, 166, 154, 0.25); border-radius: 4px; color: var(--green); font-size: 12px; font-weight: 600; }
+.no-sltp { color: var(--text-secondary); font-size: 13px; }
+
+.sltp-btn { padding: 5px 10px; background: rgba(41, 98, 255, 0.12); border: 1px solid rgba(41, 98, 255, 0.3); border-radius: 6px; color: var(--blue); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.sltp-btn:hover { background: rgba(41, 98, 255, 0.25); }
+
+/* SL/TP modal */
+.sltp-fields { margin: 16px 0; display: flex; flex-direction: column; gap: 12px; }
+.sltp-field { position: relative; }
+.sltp-field label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.sltp-field input { width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; outline: none; }
+.sltp-field input:focus { border-color: var(--accent); }
+.sltp-pct { position: absolute; right: 12px; top: 38px; font-size: 12px; font-weight: 600; }
+
+.sltp-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.sl-dot { background: var(--red); }
+.tp-dot { background: var(--green); }
+
+.sltp-presets { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.preset-label { font-size: 11px; color: var(--text-secondary); min-width: 65px; }
+.preset-btn { padding: 4px 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-btn.clear { color: var(--text-secondary); }
+.preset-btn.clear:hover { border-color: var(--red); color: var(--red); }
+
+.modal-save-btn { width: 100%; padding: 12px; background: var(--blue); border: none; border-radius: 8px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.modal-save-btn:hover { opacity: 0.9; }
+.modal-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

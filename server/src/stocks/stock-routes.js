@@ -1,11 +1,14 @@
 import Stock from './stock-schema.js'
+import { checkSlTp } from '../services/sltp-checker.js'
 
-// Simule un micro-mouvement de prix realiste a chaque requete
+// Simule un micro-mouvement de prix realiste
 function tickPrice(basePrice) {
   const volatility = 0.002
   const change = (Math.random() - 0.48) * volatility
   return Math.round(basePrice * (1 + change) * 100) / 100
 }
+
+let appLogger = null
 
 async function refreshPrices() {
   const stocks = await Stock.find().select('symbol currentPrice')
@@ -21,12 +24,15 @@ async function refreshPrices() {
   if (bulkOps.length > 0) {
     await Stock.bulkWrite(bulkOps)
   }
+  // Verifier SL/TP apres chaque mise a jour de prix
+  await checkSlTp(appLogger)
 }
 
 // Rafraichir les prix toutes les 30 secondes
 let refreshInterval = null
-function startPriceRefresh() {
+function startPriceRefresh(logger) {
   if (refreshInterval) return
+  appLogger = logger
   refreshInterval = setInterval(refreshPrices, 30000)
   refreshPrices()
 }
@@ -35,7 +41,7 @@ function startPriceRefresh() {
  * @param {import('fastify').FastifyInstance} app
  */
 function stockRoutes(app) {
-  startPriceRefresh()
+  startPriceRefresh(app.log)
 
   // Liste de toutes les actions (sans l'historique complet pour la perf)
   app.get('', async (request, reply) => {

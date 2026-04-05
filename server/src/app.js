@@ -12,6 +12,7 @@ import stockRoutes from './stocks/stock-routes.js'
 import portfolioRoutes from './stocks/portfolio-routes.js'
 import transactionRoutes from './stocks/transaction-routes.js'
 import { seedStocks } from './stocks/seed-stocks.js'
+import { startDailyScheduler } from './services/daily-summary.js'
 
 async function buildApp() {
   const fastify = Fastify({
@@ -57,6 +58,9 @@ async function buildApp() {
   fastify.register(portfolioRoutes, { prefix: '/portfolio' })
   fastify.register(transactionRoutes, { prefix: '/transactions' })
   fastify.register(rootRoutes)
+
+  // Demarrer le scheduler de bilan quotidien (15h UTC)
+  startDailyScheduler(fastify.log)
 
   return fastify
 }

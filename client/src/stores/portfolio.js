@@ -56,9 +56,18 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     return data
   }
 
+  async function setSlTp(symbol, stopLoss, takeProfit) {
+    const data = await apiFetch('/portfolio/sl-tp', {
+      method: 'POST',
+      body: JSON.stringify({ symbol, stopLoss, takeProfit, mode: mode.value }),
+    })
+    await fetchPortfolio()
+    return data
+  }
+
   function setMode(newMode) {
     mode.value = newMode
   }
 
-  return { portfolio, transactions, loading, mode, fetchPortfolio, buyStock, sellStock, fetchTransactions, resetDemo, deposit, setMode }
+  return { portfolio, transactions, loading, mode, fetchPortfolio, buyStock, sellStock, fetchTransactions, resetDemo, deposit, setSlTp, setMode }
 })

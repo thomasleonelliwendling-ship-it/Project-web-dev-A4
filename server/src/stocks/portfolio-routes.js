@@ -192,6 +192,47 @@ function portfolioRoutes(app) {
       return reply.status(500).send({ error: `Erreur lors de la vente: ${err.message}` })
     }
   })
+  // Definir Stop Loss / Take Profit sur une position
+  app.post('/sl-tp', {
+    onRequest: [app.authenticate],
+  }, async (request, reply) => {
+    try {
+      const userId = request.user.sub
+      const { symbol, stopLoss, takeProfit, mode: bodyMode } = request.body
+      const mode = bodyMode === 'live' ? 'live' : 'demo'
+
+      if (!symbol) {
+        return reply.status(400).send({ error: 'Symbole requis' })
+      }
+
+      const portfolio = await Portfolio.findOne({ user: userId, mode })
+      if (!portfolio) {
+        return reply.status(404).send({ error: 'Portfolio introuvable' })
+      }
+
+      const holding = portfolio.holdings.find((h) => h.symbol === symbol.toUpperCase())
+      if (!holding) {
+        return reply.status(404).send({ error: 'Position introuvable' })
+      }
+
+      // null = supprimer, nombre = définir
+      holding.stopLoss = stopLoss !== undefined ? stopLoss : holding.stopLoss
+      holding.takeProfit = takeProfit !== undefined ? takeProfit : holding.takeProfit
+
+      await portfolio.save()
+
+      return reply.send({
+        message: 'SL/TP mis a jour',
+        symbol: holding.symbol,
+        stopLoss: holding.stopLoss,
+        takeProfit: holding.takeProfit,
+      })
+    } catch (err) {
+      app.log.error({ err }, 'SL/TP error')
+      return reply.status(500).send({ error: err.message })
+    }
+  })
+
   // Reinitialiser le portfolio demo
   app.post('/reset-demo', {
     onRequest: [app.authenticate],

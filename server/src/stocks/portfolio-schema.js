@@ -21,6 +21,14 @@ const holdingSchema = new Schema({
     type: Number,
     required: true,
   },
+  stopLoss: {
+    type: Number,
+    default: null,
+  },
+  takeProfit: {
+    type: Number,
+    default: null,
+  },
 }, { _id: false })
 
 const portfolioSchema = new Schema({
