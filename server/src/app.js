@@ -23,6 +23,7 @@ async function buildApp() {
       if (!origin
         || origin === config.appBaseUrl
         || origin.endsWith('.netlify.app')
+        || origin.endsWith('.vercel.app')
         || origin.startsWith('http://localhost')) {
         cb(null, true)
       } else {
