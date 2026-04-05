@@ -1,10 +1,10 @@
 import Transaction from './transaction-schema.js'
+import Stock from './stock-schema.js'
 
 /**
  * @param {import('fastify').FastifyInstance} app
  */
 function transactionRoutes(app) {
-  // Historique des transactions de l'utilisateur connecté
   app.get('', {
     onRequest: [app.authenticate],
   }, async (request, reply) => {
@@ -23,7 +23,21 @@ function transactionRoutes(app) {
       Transaction.countDocuments(filter),
     ])
 
-    return reply.send({ transactions, total, page: Number(page), limit: Number(limit) })
+    // Enrichir avec le prix actuel pour calcul P&L
+    const symbols = [...new Set(transactions.map(t => t.symbol))]
+    const stocks = await Stock.find({ symbol: { $in: symbols } }).select('symbol currentPrice').lean()
+    const priceMap = Object.fromEntries(stocks.map(s => [s.symbol, s.currentPrice]))
+
+    const enriched = transactions.map(t => {
+      const currentPrice = priceMap[t.symbol] || t.price
+      const pnl = t.type === 'buy'
+        ? (currentPrice - t.price) * t.quantity
+        : (t.price - currentPrice) * t.quantity
+      const pnlPercent = t.price > 0 ? ((currentPrice - t.price) / t.price) * 100 : 0
+      return { ...t, currentPrice, pnl: Math.round(pnl * 100) / 100, pnlPercent: Math.round(pnlPercent * 100) / 100 }
+    })
+
+    return reply.send({ transactions: enriched, total, page: Number(page), limit: Number(limit) })
   })
 }
 

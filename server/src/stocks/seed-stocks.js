@@ -67,9 +67,12 @@ function generatePriceHistory(basePrice, days = 365 * 5) {
 }
 
 export async function seedStocks() {
-  const count = await Stock.countDocuments()
-  // Re-seed si on a changé le nombre d'actifs
-  if (count === STOCKS_DATA.length) return
+  // Re-seed si les types ne sont pas corrects
+  const sample = await Stock.findOne({ sector: 'Crypto' })
+  if (sample && sample.type === 'crypto') {
+    const count = await Stock.countDocuments()
+    if (count === STOCKS_DATA.length) return
+  }
   await Stock.deleteMany({})
 
   const stocks = STOCKS_DATA.map((data) => {

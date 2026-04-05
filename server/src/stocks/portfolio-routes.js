@@ -68,8 +68,8 @@ function portfolioRoutes(app) {
       const { symbol, quantity, mode: bodyMode } = request.body
       const mode = bodyMode === 'live' ? 'live' : 'demo'
 
-      if (!symbol || !quantity || quantity < 1) {
-        return reply.status(400).send({ error: 'Symbole et quantite (>= 1) requis' })
+      if (!symbol || !quantity || quantity <= 0) {
+        return reply.status(400).send({ error: 'Symbole et quantite requise' })
       }
 
       const stock = await Stock.findOne({ symbol: symbol.toUpperCase() })
@@ -77,7 +77,9 @@ function portfolioRoutes(app) {
         return reply.status(404).send({ error: 'Action introuvable' })
       }
 
-      const total = stock.currentPrice * quantity
+      // Arrondir la quantité à 8 décimales max (crypto-compatible)
+      const qty = Math.round(quantity * 1e8) / 1e8
+      const total = stock.currentPrice * qty
 
       let portfolio = await Portfolio.findOne({ user: userId, mode })
       if (!portfolio) {
@@ -95,13 +97,13 @@ function portfolioRoutes(app) {
       const existingHolding = portfolio.holdings.find((h) => h.symbol === stock.symbol)
       if (existingHolding) {
         const totalCost = existingHolding.averageCost * existingHolding.quantity + total
-        existingHolding.quantity += quantity
+        existingHolding.quantity += qty
         existingHolding.averageCost = totalCost / existingHolding.quantity
       } else {
         portfolio.holdings.push({
           stock: stock._id,
           symbol: stock.symbol,
-          quantity,
+          quantity: qty,
           averageCost: stock.currentPrice,
         })
       }
@@ -114,13 +116,13 @@ function portfolioRoutes(app) {
         symbol: stock.symbol,
         type: 'buy',
         mode,
-        quantity,
+        quantity: qty,
         price: stock.currentPrice,
         total,
       })
 
       return reply.status(201).send({
-        message: `Achat de ${quantity} ${stock.symbol} effectue`,
+        message: `Achat de ${qty} ${stock.symbol} effectue`,
         balance: portfolio.balance,
         total,
       })
@@ -139,8 +141,8 @@ function portfolioRoutes(app) {
       const { symbol, quantity, mode: bodyMode } = request.body
       const mode = bodyMode === 'live' ? 'live' : 'demo'
 
-      if (!symbol || !quantity || quantity < 1) {
-        return reply.status(400).send({ error: 'Symbole et quantite (>= 1) requis' })
+      if (!symbol || !quantity || quantity <= 0) {
+        return reply.status(400).send({ error: 'Symbole et quantite requise' })
       }
 
       const stock = await Stock.findOne({ symbol: symbol.toUpperCase() })
@@ -148,19 +150,21 @@ function portfolioRoutes(app) {
         return reply.status(404).send({ error: 'Action introuvable' })
       }
 
+      const qty = Math.round(quantity * 1e8) / 1e8
+
       const portfolio = await Portfolio.findOne({ user: userId, mode })
       if (!portfolio) {
         return reply.status(400).send({ error: 'Aucun portfolio trouve' })
       }
 
       const holding = portfolio.holdings.find((h) => h.symbol === stock.symbol)
-      if (!holding || holding.quantity < quantity) {
+      if (!holding || holding.quantity < qty) {
         return reply.status(400).send({ error: 'Quantite insuffisante en portefeuille' })
       }
 
-      const total = stock.currentPrice * quantity
-      holding.quantity -= quantity
-      if (holding.quantity === 0) {
+      const total = stock.currentPrice * qty
+      holding.quantity -= qty
+      if (holding.quantity < 0.00000001) {
         portfolio.holdings = portfolio.holdings.filter((h) => h.symbol !== stock.symbol)
       }
 
@@ -173,13 +177,13 @@ function portfolioRoutes(app) {
         symbol: stock.symbol,
         type: 'sell',
         mode,
-        quantity,
+        quantity: qty,
         price: stock.currentPrice,
         total,
       })
 
       return reply.status(201).send({
-        message: `Vente de ${quantity} ${stock.symbol} effectuee`,
+        message: `Vente de ${qty} ${stock.symbol} effectuee`,
         balance: portfolio.balance,
         total,
       })

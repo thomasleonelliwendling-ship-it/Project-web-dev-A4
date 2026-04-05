@@ -44,6 +44,8 @@ function formatDate(date) {
             <th>Quantite</th>
             <th>Prix unitaire</th>
             <th>Total</th>
+            <th>Cours actuel</th>
+            <th>P&amp;L</th>
           </tr>
         </thead>
         <tbody>
@@ -60,6 +62,11 @@ function formatDate(date) {
             <td>{{ tx.quantity }}</td>
             <td>{{ formatPrice(tx.price) }}</td>
             <td class="total-cell">{{ formatPrice(tx.total) }}</td>
+            <td>{{ formatPrice(tx.currentPrice) }}</td>
+            <td :class="tx.pnl >= 0 ? 'positive' : 'negative'" class="pnl-cell">
+              {{ tx.pnl >= 0 ? '+' : '' }}{{ formatPrice(tx.pnl) }}
+              <span class="pnl-pct">({{ tx.pnlPercent >= 0 ? '+' : '' }}{{ tx.pnlPercent }}%)</span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -174,6 +181,11 @@ function formatDate(date) {
 .total-cell {
   font-weight: 600;
 }
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.pnl-cell { font-weight: 600; white-space: nowrap; }
+.pnl-pct { font-size: 12px; font-weight: 400; opacity: 0.8; }
 
 .empty-state {
   text-align: center;

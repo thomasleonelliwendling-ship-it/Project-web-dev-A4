@@ -104,7 +104,7 @@ async function handleTrade() {
         <div class="trade-form">
           <div class="form-group">
             <label>Quantite</label>
-            <input v-model.number="quantity" type="number" min="1" step="1" />
+            <input v-model.number="quantity" type="number" min="0.001" step="any" />
           </div>
 
           <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">

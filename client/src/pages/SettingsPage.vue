@@ -11,8 +11,16 @@ const defaults = { theme: 'dark', language: 'fr', currency: 'USD', defaultMode: 
 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || defaults
 const settings = ref({ ...defaults, ...saved })
 
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme)
+}
+
+// Apply saved theme on load
+applyTheme(settings.value.theme)
+
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value))
+  applyTheme(settings.value.theme)
   saveMsg.value = 'Preferences sauvegardees'
   setTimeout(() => saveMsg.value = '', 2000)
 }
@@ -65,7 +73,7 @@ const saveMsg = ref('')
           </div>
           <select v-model="settings.theme" class="setting-select" @change="save">
             <option value="dark">Sombre</option>
-            <option value="light" disabled>Clair (bientot)</option>
+            <option value="light">Clair</option>
           </select>
         </div>
         <div class="setting-row">
@@ -75,7 +83,7 @@ const saveMsg = ref('')
           </div>
           <select v-model="settings.language" class="setting-select" @change="save">
             <option value="fr">Francais</option>
-            <option value="en" disabled>English (bientot)</option>
+            <option value="en">English</option>
           </select>
         </div>
         <div class="setting-row">
@@ -85,7 +93,7 @@ const saveMsg = ref('')
           </div>
           <select v-model="settings.currency" class="setting-select" @change="save">
             <option value="USD">USD ($)</option>
-            <option value="EUR" disabled>EUR (bientot)</option>
+            <option value="EUR">EUR</option>
           </select>
         </div>
       </div>
